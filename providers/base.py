@@ -162,6 +162,25 @@ class BaseProvider(ABC):
         """Compute elapsed time in milliseconds."""
         return round((time() - start) * 1000, 2)
 
+    def _call_with_retry(self, func, *args, max_attempts=3, **kwargs):
+        """Retry a function call with exponential backoff."""
+        import time
+        for attempt in range(1, max_attempts + 1):
+            result = func(*args, **kwargs)
+            # إذا نجح، أعد النتيجة فورًا
+            if result.success:
+                return result
+            # إذا فشل بسبب خطأ شبكة أو معدل، أعد المحاولة
+            code = result.error_code or 0
+            if code in (429, 408, 500, 502, 503, 504):
+                if attempt < max_attempts:
+                    wait = 2 ** (attempt - 1)  # 1s, 2s, 4s
+                    time.sleep(wait)
+                    continue
+            # خطأ آخر لا يستحق إعادة المحاولة
+            return result
+        return result
+
 
 # ============================================================
 # Self-test

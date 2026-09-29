@@ -16,6 +16,8 @@ from brain.session import SessionLifecycle
 from brain.reflection import Reflector
 from brain.tool_loop import run_with_tools
 from brain.builder import Builder
+from brain.evolve import EvolveEngine
+from brain.vision import vision_summary
 from tools.reddit import search_reddit
 from tools.file_ops import FileOps
 from tools.shell import ShellOps
@@ -45,6 +47,8 @@ def show_help():
     print("  /search <query>    search Reddit via RSS")
     print("  /tools [on|off]    enable/disable automatic tool use")
     print("  /build <path> <desc>  generate a full file from description")
+    print("  /vision            show vision summary")
+    print("  /evolve            propose & build next evolution step")
     print("  /reflect [N]       extract lessons from last N episodes")
     print("  /lessons [query]   search lessons learned")
     print("  /clear             clear screen")
@@ -96,6 +100,7 @@ def main():
 
     reflector = Reflector(brain)
     builder = Builder(brain)
+    evolve_engine = EvolveEngine(brain)
     file_ops = FileOps()
     shell_ops = ShellOps()
     session = SessionLifecycle()
@@ -261,6 +266,57 @@ def main():
                                 print(c(f"❌ Write failed: {r['error']}", RED))
                         else:
                             print(c("Cancelled (file not written).", DIM))
+            elif cmd == "/vision":
+                print(c("── MOROAI VISION ──", BOLD))
+                print(vision_summary())
+            elif cmd == "/evolve":
+                print(c("Reading vision...", DIM))
+                plan = evolve_engine.propose()
+                if not plan:
+                    print(c("Could not propose a step.", RED))
+                else:
+                    print()
+                    print(c("── PROPOSED STEP ──", BOLD))
+                    print(f"  Title      : {c(plan.get('step_title','?'), CYAN)}")
+                    print(f"  Target     : {c(plan.get('target_file','?'), CYAN)}")
+                    print(f"  Action     : {plan.get('action','?')}")
+                    print(f"  Description: {plan.get('description','')}")
+                    print()
+                    try:
+                        ans = input(c("Build this? [y/N]: ", YELLOW)).strip().lower()
+                    except (EOFError, KeyboardInterrupt):
+                        ans = "n"
+                    if ans != "y":
+                        print(c("Cancelled.", DIM))
+                    else:
+                        print(c("Generating...", DIM))
+                        content = evolve_engine.generate(plan)
+                        if not content:
+                            print(c("Generation failed.", RED))
+                        else:
+                            target = plan["target_file"]
+                            print()
+                            print(c("── PREVIEW (first 800 chars) ──", BOLD))
+                            print(content[:800])
+                            if len(content) > 800:
+                                print(c(f"... ({len(content) - 800} more chars)", DIM))
+                            print(f"Total: {len(content)} chars")
+                            print()
+                            try:
+                                ans2 = input(c("Write this file? [y/N]: ", YELLOW)).strip().lower()
+                            except (EOFError, KeyboardInterrupt):
+                                ans2 = "n"
+                            if ans2 == "y":
+                                h = brain.checkpoints.create(f"Before evolve: {target}")
+                                if h:
+                                    print(c(f"Checkpoint: {h[:8]}", GREEN))
+                                r = brain.file_ops.write_file(target, content)
+                                if r.get("success"):
+                                    print(c(f"Written: {r['path']} ({r['bytes_written']} bytes)", GREEN))
+                                else:
+                                    print(c(f"Write failed: {r.get('error')}", RED))
+                            else:
+                                print(c("File not written.", DIM))
             elif cmd == "/tools":
                 if args.strip().lower() in ("on", "off"):
                     tools_enabled = (args.strip().lower() == "on")

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>MOROAI — الذكاء الاصطناعي المستقل</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css?v=3">
+</head>
+<body>
+
+<div class="mesh-bg"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo-mark">M</div>
+    <div class="brand-text">
+      <span class="brand-name">MOROAI</span>
+      <span class="brand-tag">ذكاء اصطناعي مستقل · عربي · مجاني</span>
+    </div>
+  </div>
+  <button id="drawer-toggle" class="icon-btn" aria-label="القائمة">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"/>
+      <line x1="4" y1="12" x2="20" y2="12"/>
+      <line x1="4" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+</header>
+
+<main class="stage">
+  <section id="chat" class="chat-area"></section>
+</main>
+
+<footer class="composer-wrap">
+  <div class="composer">
+    <button id="tools-chip" class="chip on" title="تبديل الأدوات">🛠 الأدوات</button>
+    <textarea id="input" placeholder="اكتب رسالتك بالعربية..." rows="1"></textarea>
+    <button id="send" class="send-btn" aria-label="إرسال">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 11l18-8-8 18-2-8-8-2z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="composer-hint">MOROAI قد يخطئ — تحقق من المعلومات المهمة</div>
+</footer>
+
+<aside id="drawer" class="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">لوحة التحكم</div>
+    <button id="drawer-close" class="icon-btn" aria-label="إغلاق">✕</button>
+  </div>
+  <nav class="drawer-nav">
+    <a href="#" class="drawer-item active"><span>💬</span> المحادثة</a>
+    <a href="#" class="drawer-item"><span>🧠</span> المعرفة</a>
+    <a href="#" class="drawer-item"><span>🛠</span> الأدوات</a>
+    <a href="#" class="drawer-item"><span>📊</span> الحالة</a>
+    <a href="#" class="drawer-item"><span>⚙️</span> الإعدادات</a>
+  </nav>
+  <div class="drawer-sep"></div>
+  <div id="status-panel" class="status-panel">جاري التحميل...</div>
+</aside>
+
+<div id="overlay" class="overlay"></div>
+
+<script src="/static/app.js?v=3"></script>
+</body>
+</html>

@@ -37,9 +37,9 @@ GEMINI_DEFAULT_CONFIG = ProviderConfig(
     enabled=True,
     priority=2,
     models=[
+        "gemini-3.5-flash-lite",
         "gemini-3.8-flash",
         "gemini-3.7-flash",
-        "gemini-3.5-flash-lite",
     ],
     capabilities=["chat", "code"],
     api_key_env="GEMINI_API_KEY",
@@ -118,6 +118,12 @@ class GeminiProvider(BaseProvider):
             url, data=data, headers=headers, method="POST",
         )
 
+        try:
+            return self._call_with_retry(self._do_request, req, start)
+        except Exception as e:
+            return self._error_response(f"{type(e).__name__}: {e}", code=500)
+
+    def _do_request(self, req, start):
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
                 raw = resp.read().decode("utf-8")
