@@ -14,6 +14,7 @@ except Exception:
 from brain.core import MOROAI, CONTENT_CLASSES
 from brain.session import SessionLifecycle
 from brain.reflection import Reflector
+from tools.reddit import search_reddit
 
 
 def c(t, code):
@@ -37,6 +38,7 @@ def show_help():
     print("  /accept <id>       accept session")
     print("  /reject <id>       reject session")
     print("  /memory            memory stats")
+    print("  /search <query>    search Reddit via RSS")
     print("  /reflect [N]       extract lessons from last N episodes")
     print("  /lessons [query]   search lessons learned")
     print("  /clear             clear screen")
@@ -150,6 +152,21 @@ def main():
                 print(c("Accepted.", GREEN) if brain.workspace.accept(args) else c("Failed.", RED))
             elif cmd == "/reject":
                 print(c("Rejected.", GREEN) if brain.workspace.reject(args) else c("Failed.", RED))
+            elif cmd == "/search":
+                if not args:
+                    print(c("Usage: /search <query>", YELLOW))
+                else:
+                    print(c(f"Searching Reddit: {args}", YELLOW))
+                    results = search_reddit(args, limit=5)
+                    if not results:
+                        print(c("No results (rate limit or network).", DIM))
+                    else:
+                        for i, r in enumerate(results, 1):
+                            print()
+                            print(c(f"[{i}] r/{r['subreddit']}", BOLD))
+                            print(f"    {r['title'][:90]}")
+                            print(c(f"    {r['url']}", CYAN))
+                            print(c(f"    by {r['author']} on {r['updated'][:10]}", DIM))
             elif cmd == "/memory":
                 print(f"Interactions: {c(str(brain.memory.count()), CYAN)}")
                 stats = brain.learning.count()
