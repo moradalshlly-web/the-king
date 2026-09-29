@@ -37,9 +37,9 @@ GEMINI_DEFAULT_CONFIG = ProviderConfig(
     enabled=True,
     priority=2,
     models=[
-        "gemini-2.5-flash",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash-lite",
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-3.5-flash-lite",
     ],
     capabilities=["chat", "code"],
     api_key_env="GEMINI_API_KEY",
