@@ -35,6 +35,7 @@ from memory.workspace import WorkspaceManager
 from providers.registry import ProviderRegistry
 from providers.groq import GroqProvider
 from providers.gemini import GeminiProvider
+from providers.openrouter import OpenRouterProvider
 from providers.base import AIResponse
 from brain.identity import load_identity
 
@@ -118,6 +119,10 @@ class MOROAI:
             pass
         try:
             self.registry.register("gemini", GeminiProvider())
+        except Exception:
+            pass
+        try:
+            self.registry.register("openrouter", OpenRouterProvider())
         except Exception:
             pass
 

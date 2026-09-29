@@ -78,8 +78,8 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
         "capabilities": ["chat"],
     },
     "openrouter": {
-        "priority": 5,
-        "models": ["meta-llama/llama-3.3-70b-instruct:free"],
+        "priority": 3,
+        "models": ["cohere/north-mini-code:free", "nvidia/nemotron-3-ultra-550b-a55b:free", "qwen/qwen3.8-27b:free"],
         "daily_limit": 50,
         "rpm_limit": 20,
         "api_key_env": "OPENROUTER_API_KEY",
