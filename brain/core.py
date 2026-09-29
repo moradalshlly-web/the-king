@@ -34,6 +34,7 @@ from memory.workspace import WorkspaceManager
 from providers.registry import ProviderRegistry
 from providers.groq import GroqProvider
 from providers.base import AIResponse
+from brain.identity import load_identity
 
 
 # ============================================================
@@ -54,6 +55,9 @@ class MOROAI:
 
     def __init__(self, project_root: Optional[str] = None):
         self.project_root = os.path.abspath(project_root or PROJECT_ROOT)
+
+        # Identity
+        self.identity = load_identity()
 
         # Subsystems
         self.memory = MemoryManager()
@@ -185,10 +189,16 @@ class MOROAI:
             )
 
         # 3. EXECUTE via registry (with automatic fallback)
+        # Merge MOROAI identity with any per-call system prompt
+        if system:
+            combined_system = self.identity + "\n\n" + system
+        else:
+            combined_system = self.identity
+
         response = self.registry.call_with_fallback(
             prompt=prompt,
             model=model,
-            system=system,
+            system=combined_system,
             temperature=temperature,
         )
 
