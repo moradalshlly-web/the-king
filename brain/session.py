@@ -93,15 +93,18 @@ class SessionLifecycle:
         except Exception as e:
             summary["status"] = f"checkpoint_error: {e}"
 
-        # 2. Create isolated workspace session
-        try:
-            sid = self.workspace.create_session(
-                conversation_ref=conversation_ref,
-                note=note or "Auto session snapshot at close",
-            )
-            summary["session_id"] = sid
-        except Exception as e:
-            summary["status"] = f"workspace_error: {e}"
+        # 2. Create isolated workspace session ONLY if there were real changes
+        if summary.get("checkpoint_hash"):
+            try:
+                sid = self.workspace.create_session(
+                    conversation_ref=conversation_ref,
+                    note=note or "Auto session snapshot at close",
+                )
+                summary["session_id"] = sid
+            except Exception as e:
+                summary["status"] = f"workspace_error: {e}"
+        else:
+            summary["session_id"] = None
 
         # 3. Save session state (so we can find it on next launch)
         self._save_state({
