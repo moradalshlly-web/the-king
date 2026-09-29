@@ -141,7 +141,7 @@ def main():
                 for cp in brain.checkpoints.list(10):
                     print(f"  {c(cp['hash'][:8], CYAN)}  {cp['message'][:50]}")
             elif cmd == "/sessions":
-                ss = brain.workspace.list_sessions(10)
+                ss = brain.workspace.list_sessions(limit=10)
                 if not ss:
                     print(c("None.", DIM))
                 for s in ss:
