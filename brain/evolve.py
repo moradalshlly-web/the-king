@@ -25,6 +25,19 @@ from brain.vision import vision_prompt, load_vision
 from tools.file_ops import FileOps
 
 
+# Core files that /evolve must NOT overwrite unless action == "modify"
+PROTECTED_FILES = {
+    "brain/evolve.py",
+    "brain/core.py",
+    "brain/prime_directives.py",
+    "brain/identity.py",
+    "brain/owner_profile.py",
+    "brain/vision.py",
+    "cli.py",
+    "web/server.py",
+}
+
+
 EVOLVE_SYSTEM = """You are MOROAI's evolution engine.
 
 You read MOROAI's vision and current capabilities, then propose ONE
@@ -101,7 +114,13 @@ Output in the required format."""
         """Generate the content of the target file."""
         target = plan.get("target_file", "")
         desc = plan.get("description", "")
+        action = plan.get("action", "create").lower()
         if not target or not desc:
+            return None
+
+        # Refuse to overwrite protected files unless action == "modify"
+        if target in PROTECTED_FILES and action != "modify":
+            print(f"[evolve] BLOCKED: '{target}' is protected. Use action=modify.")
             return None
 
         prompt = f"""Target file: {target}
