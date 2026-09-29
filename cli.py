@@ -13,6 +13,7 @@ except Exception:
 
 from brain.core import MOROAI, CONTENT_CLASSES
 from brain.session import SessionLifecycle
+from brain.reflection import Reflector
 
 
 def c(t, code):
@@ -36,6 +37,8 @@ def show_help():
     print("  /accept <id>       accept session")
     print("  /reject <id>       reject session")
     print("  /memory            memory stats")
+    print("  /reflect [N]       extract lessons from last N episodes")
+    print("  /lessons [query]   search lessons learned")
     print("  /clear             clear screen")
     print("  /exit              close")
     print()
@@ -82,6 +85,7 @@ def main():
     print(c(f"Owner mode : {brain.owner.age_mode}", GREEN))
     print(c("Type /help for commands.", DIM))
 
+    reflector = Reflector(brain)
     session = SessionLifecycle()
     try:
         info = session.on_session_start()
@@ -148,6 +152,28 @@ def main():
                 print(c("Rejected.", GREEN) if brain.workspace.reject(args) else c("Failed.", RED))
             elif cmd == "/memory":
                 print(f"Interactions: {c(str(brain.memory.count()), CYAN)}")
+                stats = brain.learning.count()
+                print(f"Episodes    : {c(str(stats['episodes']), CYAN)}")
+                print(f"Lessons     : {c(str(stats['lessons']), CYAN)}")
+            elif cmd == "/reflect":
+                n = 5
+                if args.strip().isdigit():
+                    n = int(args.strip())
+                print(c(f"Reflecting on last {n} episode(s)...", YELLOW))
+                lessons = reflector.reflect_last(n)
+                if not lessons:
+                    print(c("No lessons extracted.", DIM))
+                else:
+                    for l in lessons:
+                        print(c(f"  [{l['category']}] {l['rule']}", GREEN))
+            elif cmd == "/lessons":
+                rows = brain.learning.search_lessons(args or "the", limit=10)
+                if not rows:
+                    print(c("No lessons yet. Use /reflect.", DIM))
+                else:
+                    for r in rows:
+                        print(f"  {c('[' + str(r['id']) + ']', CYAN)} "
+                              f"{c(r['category'], MAGENTA)}  {r['rule']}")
             elif cmd == "/clear":
                 os.system("clear")
             else:

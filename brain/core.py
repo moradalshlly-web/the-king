@@ -29,6 +29,7 @@ from brain import owner_profile as OP
 
 from memory.checkpoint import CheckpointManager
 from memory.manager import MemoryManager
+from memory.learning import LearningMemory
 from memory.workspace import WorkspaceManager
 
 from providers.registry import ProviderRegistry
@@ -61,6 +62,7 @@ class MOROAI:
 
         # Subsystems
         self.memory = MemoryManager()
+        self.learning = LearningMemory()
         self.checkpoints = CheckpointManager(self.project_root)
         self.workspace = WorkspaceManager(self.project_root)
         self.registry = ProviderRegistry()
@@ -188,12 +190,24 @@ class MOROAI:
                 ),
             )
 
-        # 3. EXECUTE via registry (with automatic fallback)
-        # Merge MOROAI identity with any per-call system prompt
+        # 3. RECALL: search for relevant lessons
+        lessons = self.learning.search_lessons(prompt, limit=3)
+        lessons_text = ""
+        if lessons:
+            bullets = "\n".join(f"- {l['rule']}" for l in lessons)
+            lessons_text = (
+                "\n\nRelevant lessons learned from past interactions:\n"
+                + bullets
+            )
+
+        # 4. EXECUTE via registry (with automatic fallback)
+        # Merge MOROAI identity + lessons + any per-call system prompt
+        parts = [self.identity]
+        if lessons_text:
+            parts.append(lessons_text.strip())
         if system:
-            combined_system = self.identity + "\n\n" + system
-        else:
-            combined_system = self.identity
+            parts.append(system)
+        combined_system = "\n\n".join(parts)
 
         response = self.registry.call_with_fallback(
             prompt=prompt,
@@ -202,8 +216,22 @@ class MOROAI:
             temperature=temperature,
         )
 
-        # 4. REFLECT: save to memory
+        # 5. REFLECT: save to memory + learning DB
         self._log(prompt, response, content_class)
+        try:
+            self.learning.save_episode(
+                prompt=prompt,
+                response=response.text,
+                success=response.success,
+                provider=response.provider,
+                model=response.model,
+                latency_ms=response.latency_ms,
+                tokens_used=response.tokens_used,
+                content_class=content_class,
+                error=response.error,
+            )
+        except Exception:
+            pass
 
         return response
 
