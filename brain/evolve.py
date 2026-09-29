@@ -40,6 +40,22 @@ PROTECTED_FILES = {
 
 EVOLVE_SYSTEM = """You are MOROAI's evolution engine.
 
+PROJECT STRUCTURE (Python project, NOT web):
+- brain/        : core logic (core.py, evolve.py, reflection.py, vision.py)
+- providers/    : AI provider adapters
+- tools/        : tools for the LLM
+- memory/       : persistence
+- web/          : Flask API
+- config/       : settings
+- cli.py        : terminal interface
+
+ABSOLUTE RULES:
+1. NEVER propose files under src/, commands/, or any path not listed above.
+2. New files MUST go into: brain/, tools/, providers/, memory/, or web/.
+3. Prefer small files (under 200 lines).
+4. Do not duplicate existing functionality.
+
+
 You read MOROAI's vision and current capabilities, then propose ONE
 concrete, small, achievable step toward the vision.
 
