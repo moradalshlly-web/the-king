@@ -1,0 +1,187 @@
+"""
+brain/tool_loop.py
+==================
+
+Agentic loop for MOROAI: LLM -> tool call -> execute -> observe -> LLM.
+
+Limits:
+    - Max iterations: 3 (protects free-tier quota)
+    - If the LLM never calls a tool, returns immediately (fast path)
+    - If a tool fails, the error is fed back to the LLM for a retry
+
+Registration:
+    Call `register_default_tools()` once at startup.
+
+Inspiration (no code copied):
+    - SWE-Agent: LLM -> tool call -> observation loop
+    - OpenHands: agent loop with max_iterations
+    - Hermes function-calling: textual tool calls
+"""
+
+from typing import Dict, Any, Optional
+
+from brain import tools_registry as TR
+
+
+MAX_ITERATIONS = 3
+
+
+# ============================================================
+# Register default MOROAI tools
+# ============================================================
+
+_registered = False
+
+
+def register_default_tools() -> None:
+    """Register all MOROAI tools once."""
+    global _registered
+    if _registered:
+        return
+
+    from tools.file_ops import FileOps
+    from tools.shell import ShellOps
+    from tools.reddit import search_reddit
+
+    fops = FileOps()
+    sops = ShellOps()
+
+    # read_file
+    TR.register(
+        name="read_file",
+        description="Read the content of a text file inside the project.",
+        params="path=<relative_path>",
+        func=lambda path: fops.read_file(path),
+    )
+
+    # list_dir
+    TR.register(
+        name="list_dir",
+        description="List files in a directory inside the project.",
+        params="path=<relative_path>",
+        func=lambda path=".": fops.list_dir(path, recursive=False),
+    )
+
+    # write_file
+    TR.register(
+        name="write_file",
+        description="Write text to a file inside the project. Creates parent dirs.",
+        params='path=<relative_path> content="<text>"',
+        func=lambda path, content="": fops.write_file(path, content),
+    )
+
+    # run_shell
+    TR.register(
+        name="run_shell",
+        description="Run a safe, allowlisted shell command inside the project.",
+        params='cmd="<command>"',
+        func=lambda cmd="": sops.run(cmd),
+    )
+
+    # search_reddit
+    TR.register(
+        name="search_reddit",
+        description="Search Reddit for posts matching a query (returns titles + URLs).",
+        params='query="<text>" limit=5',
+        func=lambda query, limit=5: {
+            "success": True,
+            "result": _format_reddit(search_reddit(query, limit=int(limit))),
+        },
+    )
+
+    _registered = True
+
+
+def _format_reddit(posts) -> str:
+    if not posts:
+        return "(no results)"
+    lines = []
+    for i, p in enumerate(posts, 1):
+        lines.append(f"{i}. r/{p['subreddit']} — {p['title']}")
+        lines.append(f"   {p['url']}")
+    return "\n".join(lines)
+
+
+# ============================================================
+# The loop
+# ============================================================
+
+def run_with_tools(
+    brain,
+    prompt: str,
+    content_class: str = "standard",
+    system: Optional[str] = None,
+    max_iterations: int = MAX_ITERATIONS,
+    verbose: bool = False,
+):
+    """
+    Run the agentic loop.
+
+    Returns the final AIResponse.
+    """
+    register_default_tools()
+
+    # Build the tool-aware system prompt
+    tool_section = TR.tools_prompt()
+    if system:
+        sys = f"{system}\n\n{tool_section}"
+    else:
+        sys = tool_section
+
+    # First call
+    response = brain.ask(
+        prompt=prompt,
+        content_class=content_class,
+        system=sys,
+    )
+
+    if not response.success:
+        return response
+
+    # Iterate
+    for iteration in range(max_iterations):
+        call = TR.parse_tool_call(response.text)
+        if call is None:
+            # No tool call -> final answer
+            return response
+
+        # Execute
+        result = TR.execute_tool(call["name"], call["args"])
+        formatted = TR.format_result(result)
+
+        if verbose:
+            print(f"[tool_loop] iter={iteration+1} "
+                  f"tool={call['name']} args={call['args']} "
+                  f"success={result.get('success')}")
+
+        # Ask the LLM again with the result
+        followup_prompt = (
+            f"Tool result for `{call['name']}`:\n\n"
+            f"{formatted}\n\n"
+            f"Now give the final answer to the user's original question. "
+            f"Do not call another tool unless absolutely necessary."
+        )
+        response = brain.ask(
+            prompt=followup_prompt,
+            content_class=content_class,
+            system=sys,
+        )
+        if not response.success:
+            return response
+
+    return response
+
+
+# ============================================================
+# Self-test
+# ============================================================
+
+if __name__ == "__main__":
+    register_default_tools()
+    tools = TR.all_tools()
+    print(f"Registered tools: {list(tools.keys())}")
+    assert "read_file" in tools
+    assert "list_dir" in tools
+    assert "run_shell" in tools
+    assert "search_reddit" in tools
+    print("✅ tool_loop registration OK.")

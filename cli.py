@@ -14,6 +14,7 @@ except Exception:
 from brain.core import MOROAI, CONTENT_CLASSES
 from brain.session import SessionLifecycle
 from brain.reflection import Reflector
+from brain.tool_loop import run_with_tools
 from tools.reddit import search_reddit
 from tools.file_ops import FileOps
 from tools.shell import ShellOps
@@ -41,6 +42,7 @@ def show_help():
     print("  /reject <id>       reject session")
     print("  /memory            memory stats")
     print("  /search <query>    search Reddit via RSS")
+    print("  /tools [on|off]    enable/disable automatic tool use")
     print("  /reflect [N]       extract lessons from last N episodes")
     print("  /lessons [query]   search lessons learned")
     print("  /clear             clear screen")
@@ -88,6 +90,7 @@ def main():
 
     print(c(f"Owner mode : {brain.owner.age_mode}", GREEN))
     print(c("Type /help for commands.", DIM))
+    print(c(f"Tools: ON (MOROAI can read files, run safe commands, search Reddit)", DIM))
 
     reflector = Reflector(brain)
     file_ops = FileOps()
@@ -102,6 +105,7 @@ def main():
         pass
 
     cc = "standard"
+    tools_enabled = True
 
     while True:
         try:
@@ -203,6 +207,15 @@ def main():
                         if r["stdout"]:
                             print(r["stdout"])
                         print(c(f"Exit {r['exit_code']}: {r['stderr'] or r['error']}", RED))
+            elif cmd == "/tools":
+                if args.strip().lower() in ("on", "off"):
+                    tools_enabled = (args.strip().lower() == "on")
+                    state = "ON" if tools_enabled else "OFF"
+                    print(c(f"Tools: {state}", GREEN if tools_enabled else YELLOW))
+                else:
+                    state = "ON" if tools_enabled else "OFF"
+                    print(f"Tools: {c(state, GREEN if tools_enabled else YELLOW)}")
+                    print("Usage: /tools on|off")
             elif cmd == "/memory":
                 print(f"Interactions: {c(str(brain.memory.count()), CYAN)}")
                 stats = brain.learning.count()
@@ -233,7 +246,10 @@ def main():
                 print(c(f"Unknown: {cmd}", RED))
             continue
 
-        resp = brain.ask(prompt=raw, content_class=cc)
+        if tools_enabled:
+            resp = run_with_tools(brain, raw, content_class=cc)
+        else:
+            resp = brain.ask(prompt=raw, content_class=cc)
         if resp.success:
             print()
             print(c(resp.text, CYAN))
