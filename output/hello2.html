@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOROAI</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .glow-text {
+            color: #FFD700;
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 
+                0 0 10px #FFD700,
+                0 0 20px #FFD700,
+                0 0 40px #FFD700,
+                0 0 80px #FFD700;
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                text-shadow: 
+                    0 0 10px #FFD700,
+                    0 0 20px #FFD700,
+                    0 0 40px #FFD700;
+            }
+            to {
+                text-shadow: 
+                    0 0 20px #FFD700,
+                    0 0 40px #FFD700,
+                    0 0 80px #FFD700,
+                    0 0 120px #FFD700;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="glow-text">أهلاً بك في MOROAI</h1>
+</body>
+</html>
