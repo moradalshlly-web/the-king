@@ -5,3 +5,4 @@ __pycache__/
 *.log
 .moroai/workspace/
 .moroai/checkpoints/
+output/
