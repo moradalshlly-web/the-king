@@ -52,7 +52,7 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
     },
     "gemini": {
         "priority": 2,
-        "models": ["gemini-3.1-flash-lite", "gemini-3.5-flash"],
+        "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"],
         "daily_limit": 1500,
         "rpm_limit": 15,
         "api_key_env": "GEMINI_API_KEY",
