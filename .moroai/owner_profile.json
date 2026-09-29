@@ -1,0 +1,6 @@
+{
+  "age_mode": "adult",
+  "set_at": "2026-09-29T00:24:24.932157+00:00",
+  "integrity_hash": "f38765a3545f1eb616394a813ad4569b717855102f60f15c0fd9f9ed466193bc",
+  "note": "Set once at first run. To change, delete this file manually and re-run: python -m brain.owner_profile setup"
+}
