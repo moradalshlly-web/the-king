@@ -310,7 +310,7 @@ def main():
                                 h = brain.checkpoints.create(f"Before evolve: {target}")
                                 if h:
                                     print(c(f"Checkpoint: {h[:8]}", GREEN))
-                                r = brain.file_ops.write_file(target, content)
+                                r = evolve_engine.file_ops.write_file(target, content)
                                 if r.get("success"):
                                     print(c(f"Written: {r['path']} ({r['bytes_written']} bytes)", GREEN))
                                 else:
