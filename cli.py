@@ -15,6 +15,8 @@ from brain.core import MOROAI, CONTENT_CLASSES
 from brain.session import SessionLifecycle
 from brain.reflection import Reflector
 from tools.reddit import search_reddit
+from tools.file_ops import FileOps
+from tools.shell import ShellOps
 
 
 def c(t, code):
@@ -88,6 +90,8 @@ def main():
     print(c("Type /help for commands.", DIM))
 
     reflector = Reflector(brain)
+    file_ops = FileOps()
+    shell_ops = ShellOps()
     session = SessionLifecycle()
     try:
         info = session.on_session_start()
@@ -167,6 +171,38 @@ def main():
                             print(f"    {r['title'][:90]}")
                             print(c(f"    {r['url']}", CYAN))
                             print(c(f"    by {r['author']} on {r['updated'][:10]}", DIM))
+            elif cmd == "/ls":
+                r = file_ops.list_dir(args or ".", recursive=False)
+                if not r["success"]:
+                    print(c(f"Error: {r['error']}", RED))
+                else:
+                    for item in r["items"]:
+                        print(f"  {item}")
+            elif cmd == "/cat":
+                if not args:
+                    print(c("Usage: /cat <file>", YELLOW))
+                else:
+                    r = file_ops.read_file(args)
+                    if r["success"]:
+                        print(r["content"])
+                    else:
+                        print(c(f"Error: {r['error']}", RED))
+            elif cmd == "/run":
+                if not args:
+                    print(c("Usage: /run <command>", YELLOW))
+                else:
+                    print(c(f"$ {args}", DIM))
+                    r = shell_ops.run(args)
+                    if r["blocked"]:
+                        print(c(f"⛔ Blocked: {r['error']}", RED))
+                    elif r["success"]:
+                        print(r["stdout"])
+                        if r["stderr"]:
+                            print(c(r["stderr"], YELLOW))
+                    else:
+                        if r["stdout"]:
+                            print(r["stdout"])
+                        print(c(f"Exit {r['exit_code']}: {r['stderr'] or r['error']}", RED))
             elif cmd == "/memory":
                 print(f"Interactions: {c(str(brain.memory.count()), CYAN)}")
                 stats = brain.learning.count()
