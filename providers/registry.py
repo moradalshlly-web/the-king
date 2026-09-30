@@ -50,8 +50,22 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
         "base_url": "https://api.groq.com/openai/v1/chat/completions",
         "capabilities": ["chat", "code"],
     },
-    "gemini": {
+    "ollama_cloud": {
         "priority": 2,
+        "models": [
+            "gemma4:31b",
+            "glm-4.7",
+            "gpt-oss:120b",
+            "devstral-small-2:24b",
+        ],
+        "daily_limit": 0,
+        "rpm_limit": 0,
+        "api_key_env": "OLLAMA_API_KEY",
+        "base_url": "https://ollama.com/api/chat",
+        "capabilities": ["chat", "code"],
+    },
+    "gemini": {
+        "priority": 3,
         "models": ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite"],
         "daily_limit": 1500,
         "rpm_limit": 15,
@@ -78,7 +92,7 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
         "capabilities": ["chat"],
     },
     "openrouter": {
-        "priority": 3,
+        "priority": 4,
         "models": ["cohere/north-mini-code:free", "nvidia/nemotron-3-ultra-550b-a55b:free", "qwen/qwen3.8-27b:free"],
         "daily_limit": 50,
         "rpm_limit": 20,

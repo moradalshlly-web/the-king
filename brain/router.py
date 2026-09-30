@@ -45,22 +45,22 @@ def detect_task_type(message: str) -> str:
 
 
 PREFERENCES = {
-    "arabic":    ["falcon", "qwen", "gemini", "groq", "ollama"],
-    "code":      ["deepseek", "qwen", "groq", "openrouter", "ollama"],
-    "reasoning": ["kimi", "glm", "gemini", "groq", "ollama"],
-    "story":     ["kimi", "gemini", "groq", "ollama"],
-    "translate": ["aya", "gemini", "qwen", "groq"],
+    "arabic":    ["falcon", "ollama_cloud", "gemini", "groq", "ollama"],
+    "code":      ["ollama_cloud", "deepseek", "groq", "openrouter", "ollama"],
+    "reasoning": ["ollama_cloud", "kimi", "glm", "gemini", "groq"],
+    "story":     ["ollama_cloud", "kimi", "gemini", "groq"],
+    "translate": ["ollama_cloud", "aya", "gemini", "groq"],
     "quick":     ["groq", "cerebras", "gemini"],
-    "general":   ["groq", "gemini", "openrouter", "ollama"],
+    "general":   ["groq", "ollama_cloud", "gemini", "openrouter", "ollama"],
 }
 
 
 MODEL_PREFERENCES = {
-    "arabic":    {"ollama": "qwen2.5:7b", "groq": "qwen/qwen3.8-27b"},
-    "code":      {"groq": "qwen/qwen3.8-27b", "ollama": "qwen2.5:7b"},
-    "reasoning": {"gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
-    "story":     {"gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
-    "translate": {"gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
+    "arabic":    {"ollama_cloud": "gemma4:31b", "ollama": "qwen2.5:7b", "groq": "qwen/qwen3.8-27b"},
+    "code":      {"ollama_cloud": "gpt-oss:120b", "groq": "qwen/qwen3.8-27b", "ollama": "qwen2.5:7b"},
+    "reasoning": {"ollama_cloud": "glm-4.7", "gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
+    "story":     {"ollama_cloud": "gemma4:31b", "gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
+    "translate": {"ollama_cloud": "gemma4:31b", "gemini": "gemini-3.8-flash"},
     "quick":     {"groq": "llama-3.1-8b-instant"},
     "general":   {},
 }
@@ -91,7 +91,7 @@ def analyze(message, available):
 
 
 if __name__ == "__main__":
-    available = ["groq", "gemini", "openrouter", "ollama"]
+    available = ["groq", "gemini", "ollama_cloud", "openrouter", "ollama"]
     tests = [
         "اكتب لي دالة بايثون",
         "حلل لي هذه الرواية",

@@ -38,6 +38,7 @@ from providers.groq import GroqProvider
 from providers.gemini import GeminiProvider
 from providers.openrouter import OpenRouterProvider
 from providers.ollama import OllamaProvider
+from providers.ollama_cloud import OllamaCloudProvider
 from providers.base import AIResponse
 from brain.identity import load_identity
 
@@ -129,6 +130,10 @@ class MOROAI:
             pass
         try:
             self.registry.register("ollama", OllamaProvider())
+        except Exception:
+            pass
+        try:
+            self.registry.register("ollama_cloud", OllamaCloudProvider())
         except Exception:
             pass
 
