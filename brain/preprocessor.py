@@ -16,6 +16,7 @@ This guarantees tool usage regardless of LLM behavior.
 """
 
 import re
+from brain import search_cache
 from typing import Optional, Dict, Any, List
 
 
@@ -204,7 +205,34 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
 # ============================================================
 
 def execute_preempt(tool_call: Dict[str, Any]) -> Dict[str, Any]:
-    """Execute the detected tool. Never raises."""
+    """Execute the detected tool. Never raises. Uses cache when possible."""
+    tool = tool_call.get("tool")
+    args = tool_call.get("args", {})
+
+    # Check cache first
+    try:
+        cached = search_cache.get(tool, args)
+        if cached is not None:
+            cached["_from_cache"] = True
+            return cached
+    except Exception:
+        pass
+
+    # Execute the tool
+    result = _execute_preempt_uncached(tool_call)
+
+    # Save to cache if successful
+    try:
+        if result.get("success"):
+            search_cache.put(tool, args, result)
+    except Exception:
+        pass
+
+    return result
+
+
+def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute without cache. Never raises."""
     tool = tool_call.get("tool")
     args = tool_call.get("args", {})
 
