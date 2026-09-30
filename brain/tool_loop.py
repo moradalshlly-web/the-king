@@ -21,6 +21,7 @@ Inspiration (no code copied):
 from typing import Dict, Any, Optional
 
 from brain import tools_registry as TR
+from brain import preprocessor as PP
 
 
 MAX_ITERATIONS = 3
@@ -167,6 +168,34 @@ def run_with_tools(
     Returns the final AIResponse.
     """
     register_default_tools()
+
+    # ---- PRE-PROCESSOR: FORCE tool usage if detected ----
+    detected = PP.detect_tool(prompt)
+    if detected is not None:
+        if verbose:
+            print(f"[preprocessor] detected: {detected['tool']} args={detected['args']}")
+
+        # Execute the tool immediately
+        result = PP.execute_preempt(detected)
+        formatted = PP.format_results(result)
+
+        # Build a new prompt that includes the tool result
+        enriched_prompt = (
+            f"سياق من الأداة ({detected['tool']}):\n\n"
+            f"{formatted}\n\n"
+            f"---\n"
+            f"سؤال المستخدم الأصلي: {prompt}\n\n"
+            f"قدم إجابة نهائية بالعربية بناءً على النتائج أعلاه. "
+            f"لا تقل أنك لا تعرف، استخدم البيانات المعروضة."
+        )
+
+        # Call the LLM with the enriched prompt (no tool loop needed)
+        response = brain.ask(
+            prompt=enriched_prompt,
+            content_class=content_class,
+            system=system,
+        )
+        return response
 
     # Build the tool-aware system prompt
     tool_section = TR.tools_prompt()
