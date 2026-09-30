@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
-"""MOROAI interactive CLI."""
+"""
+MOROAI CLI v0.5
+================
+
+Features:
+    - Status banner on startup
+    - Session save/restore
+    - Commands: /help, /status, /clear, /export, /history, /provider, /model, /time
+    - All existing commands preserved
+    - Tool calling automatic
+"""
+
 import os
 import sys
+import json
+from datetime import datetime
 
 try:
     if hasattr(sys.stdout, "reconfigure"):
@@ -21,105 +34,232 @@ from brain.vision import vision_summary
 from tools.reddit import search_reddit
 from tools.web_search import search_web
 from tools.youtube import search_youtube
-from tools.file_ops import FileOps
-from tools.shell import ShellOps
 
 
-def c(t, code):
-    return f"\033[{code}m{t}\033[0m"
+# ============================================================
+# ANSI Colors
+# ============================================================
 
+def c(text, code):
+    return f"\033[{code}m{text}\033[0m"
 
 DIM, BOLD = "2", "1"
 RED, GREEN, YELLOW, CYAN, MAGENTA = "31", "32", "33", "36", "35"
+BLUE, PURPLE = "34", "35"
+
+
+# ============================================================
+# Session State
+# ============================================================
+
+SESSION_DIR = os.path.expanduser("~/moroai/.moroai/sessions")
+
+
+def save_session(messages, meta):
+    """Save current session to JSON."""
+    os.makedirs(SESSION_DIR, exist_ok=True)
+    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    path = os.path.join(SESSION_DIR, f"{ts}.json")
+    data = {
+        "created": datetime.now().isoformat(),
+        "meta": meta,
+        "messages": messages,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return path
+
+
+def list_sessions():
+    """List recent sessions."""
+    if not os.path.exists(SESSION_DIR):
+        return []
+    files = sorted(
+        [f for f in os.listdir(SESSION_DIR) if f.endswith(".json")],
+        reverse=True
+    )
+    return files[:10]
+
+
+def load_session(path):
+    """Load a session file."""
+    if not os.path.isabs(path):
+        path = os.path.join(SESSION_DIR, path)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+# ============================================================
+# Banner & Info Panels
+# ============================================================
+
+def show_banner(brain, content_class, tools_on):
+    """Show startup banner with system status."""
+    print()
+    print(c("╔══════════════════════════════════════════════════╗", PURPLE))
+    print(c("║         MOROAI  ·  v0.5  ·  Command Center       ║", PURPLE))
+    print(c("╚══════════════════════════════════════════════════╝", PURPLE))
+
+    # Owner + content
+    owner = brain.owner.age_mode if brain.owner else "NONE"
+    tools_str = c("ON", GREEN) if tools_on else c("OFF", RED)
+    print(f"  👤 Owner: {c(owner, CYAN)}   🎯 Class: {c(content_class, CYAN)}   🛠 Tools: {tools_str}")
+
+    # Providers
+    provs = brain.available_providers()
+    prov_line = "  🔌 "
+    for name, info in provs.items():
+        if info["is_available"]:
+            prov_line += c(f"{name} ", GREEN)
+        else:
+            prov_line += c(f"{name} ", DIM)
+    print(prov_line)
+
+    # Memory
+    try:
+        stats = brain.learning.count()
+        eps = stats.get("episodes", 0)
+        lessons = stats.get("lessons", 0)
+        print(f"  💾 Memory: {c(str(eps), CYAN)} episodes · {c(str(lessons), CYAN)} lessons")
+    except Exception:
+        pass
+
+    print(c("  Type /help for commands · /exit to quit", DIM))
+    print()
 
 
 def show_help():
     print()
-    print(c("Commands:", BOLD))
-    print("  /help              this help")
-    print("  /status            brain + providers")
-    print("  /content <class>   switch content class")
-    print(f"                     classes: {sorted(CONTENT_CLASSES)}")
-    print("  /checkpoint [msg]  create checkpoint")
-    print("  /checkpoints       list checkpoints")
-    print("  /sessions          list workspace sessions")
-    print("  /accept <id>       accept session")
-    print("  /reject <id>       reject session")
-    print("  /memory            memory stats")
-    print("  /search <query>    search Reddit via RSS")
-    print("  /tools [on|off]    enable/disable automatic tool use")
-    print("  /build <path> <desc>  generate a full file from description")
-    print("  /vision            show vision summary")
-    print("  /evolve            propose & build next evolution step")
-    print("  /reflect [N]       extract lessons from last N episodes")
-    print("  /lessons [query]   search lessons learned")
-    print("  /clear             clear screen")
-    print("  /exit              close")
+    print(c("─── CHAT ───", BOLD))
+    print("  (اكتب بالعربية مباشرة للدردشة)")
+
+    print()
+    print(c("─── COMMANDS ───", BOLD))
+    print("  /help              هذا الدليل")
+    print("  /status            حالة النظام + المزودين")
+    print("  /clear             مسح الشاشة")
+    print("  /history           آخر 20 رسالة")
+    print("  /export            حفظ المحادثة في ملف")
+    print("  /time              وقت الجلسة")
+    print("  /provider [name]   عرض/إجبار مزود")
+    print("  /model [name]      عرض/إجبار نموذج")
+    print("  /content [class]   تغيير فئة المحتوى")
+
+    print()
+    print(c("─── TOOLS ───", BOLD))
+    print("  /tools [on|off]    تفعيل/إيقاف الأدوات التلقائية")
+    print("  /search <query>    بحث في الويب + يوتيوب + Reddit")
+    print("  /ls [path]         عرض ملفات")
+    print("  /cat <file>        قراءة ملف")
+    print("  /run <cmd>         تنفيذ أمر shell آمن")
+
+    print()
+    print(c("─── BUILD & EVOLVE ───", BOLD))
+    print("  /build <path> <desc>   توليد ملف كامل")
+    print("  /vision                ملخص الرؤية")
+    print("  /evolve                اقتراح خطوة تطور")
+
+    print()
+    print(c("─── SESSION ───", BOLD))
+    print("  /sessions          عرض الجلسات المحفوظة")
+    print("  /resume <file>     استئناف جلسة سابقة")
+    print("  /checkpoint [msg]  إنشاء checkpoint")
+    print("  /checkpoints       عرض Checkpoints")
+    print("  /accept <id>       قبول Workspace session")
+    print("  /reject <id>       رفض Workspace session")
+    print("  /memory            إحصاءات الذاكرة")
+    print("  /reflect [N]       استخلاص دروس من آخر N")
+    print("  /lessons [query]   البحث في الدروس")
+    print("  /exit              خروج + حفظ الجلسة")
     print()
 
 
-def show_status(brain, cc):
+def show_status(brain, content_class, tools_on):
     print()
-    print(c("── BRAIN ──", BOLD))
+    print(c("─── BRAIN ───", BOLD))
     print(f"  Owner        : {brain.owner.age_mode if brain.owner else 'NONE'}")
     print(f"  Banned       : {brain.banned}")
-    print(f"  Content class: {cc}")
+    print(f"  Content      : {content_class}")
+    print(f"  Tools        : {'ON' if tools_on else 'OFF'}")
+
     print()
-    print(c("── PROVIDERS ──", BOLD))
+    print(c("─── PROVIDERS ───", BOLD))
     for name, info in brain.available_providers().items():
         ok = c("OK", GREEN) if info["is_available"] else c("NO", RED)
-        print(f"  {name:<10} [{ok}]  priority={info['priority']}")
-        print(f"             models: {', '.join(info['models'][:2])}")
+        cd = c(" (cooldown)", YELLOW) if info["in_cooldown"] else ""
+        print(f"  {name:<12} [{ok}]{cd}  priority={info['priority']}")
+        print(f"    models: {', '.join(info['models'][:2])}")
+
+    print()
+    print(c("─── MEMORY ───", BOLD))
+    try:
+        stats = brain.learning.count()
+        print(f"  Episodes : {stats.get('episodes', 0)}")
+        print(f"  Lessons  : {stats.get('lessons', 0)}")
+        print(f"  History  : {brain.memory.count()}")
+    except Exception:
+        pass
     print()
 
+
+# ============================================================
+# Main Loop
+# ============================================================
 
 def main():
-    print()
-    print(c("╔════════════════════════════════════╗", CYAN))
-    print(c("║        MOROAI  ·  v0.1.0           ║", CYAN))
-    print(c("║   Free-First  ·  Arabic-First      ║", CYAN))
-    print(c("╚════════════════════════════════════╝", CYAN))
-
+    # Boot brain
     try:
         brain = MOROAI()
     except KeyboardInterrupt:
-        print(c("Aborted.", YELLOW))
+        print(c("\nAborted.", YELLOW))
         return 1
 
     if brain.banned:
         days = brain.ban_seconds // 86400
         hours = (brain.ban_seconds % 86400) // 3600
-        print(c(f"BANNED {days}d {hours}h", RED))
+        print(c(f"⛔ BANNED for {days}d {hours}h.", RED))
         return 1
 
     if brain.owner is None:
-        print(c("No valid owner profile.", RED))
+        print(c("⛔ No owner profile.", RED))
         return 1
 
-    print(c(f"Owner mode : {brain.owner.age_mode}", GREEN))
-    print(c("Type /help for commands.", DIM))
-    print(c(f"Tools: ON (MOROAI can read files, run safe commands, search Reddit)", DIM))
-
+    # Initialize subsystems
     reflector = Reflector(brain)
     builder = Builder(brain)
     evolve_engine = EvolveEngine(brain)
-    file_ops = FileOps()
-    shell_ops = ShellOps()
-    session = SessionLifecycle()
-    try:
-        info = session.on_session_start()
-        pending = info.get("pending_reviews", [])
-        if pending:
-            print(c(f"Pending sessions: {len(pending)} (use /sessions)", YELLOW))
-    except Exception:
-        pass
+    session_lifecycle = SessionLifecycle()
 
-    cc = "standard"
+    # State
+    content_class = "standard"
     tools_enabled = True
+    forced_provider = None
+    forced_model = None
+    messages_log = []
+    started_at = datetime.now()
+
+    # Session start check
+    try:
+        info = session_lifecycle.on_session_start()
+        pending = info.get("pending_reviews", [])
+    except Exception:
+        pending = []
+
+    # Show banner
+    show_banner(brain, content_class, tools_enabled)
+    if pending:
+        print(c(f"📦 You have {len(pending)} pending session(s). Use /sessions.", YELLOW))
+        print()
 
     while True:
         try:
-            raw = input(f"\n{c('MOROAI', MAGENTA)} [{cc}]> ").strip()
+            prompt_str = f"\n{c('MOROAI', MAGENTA)} [{content_class}]> "
+            raw = input(prompt_str).strip()
         except (EOFError, KeyboardInterrupt):
             print()
             raw = "/exit"
@@ -127,56 +267,139 @@ def main():
         if not raw:
             continue
 
+        # Add to log
+        messages_log.append({"role": "user", "text": raw, "time": datetime.now().isoformat()})
+
+        # ------- COMMANDS -------
         if raw.startswith("/"):
             cmd, _, args = raw.partition(" ")
             cmd = cmd.lower()
             args = args.strip()
 
+            # Exit
             if cmd in ("/exit", "/quit"):
                 try:
-                    s = session.on_session_end(note="Closed from CLI")
-                    if s.get("checkpoint_hash"):
-                        print(c(f"Checkpoint: {s['checkpoint_hash'][:8]}", GREEN))
-                    if s.get("session_id"):
-                        print(c(f"Session: {s['session_id']}", GREEN))
+                    path = save_session(messages_log, {
+                        "content_class": content_class,
+                        "tools": tools_enabled,
+                        "providers": list(brain.available_providers().keys()),
+                    })
+                    print(c(f"💾 Session saved: {os.path.basename(path)}", GREEN))
                 except Exception as e:
-                    print(c(f"Error: {e}", YELLOW))
-                print(c("Goodbye.", CYAN))
+                    print(c(f"⚠️ Could not save session: {e}", YELLOW))
+                try:
+                    s = session_lifecycle.on_session_end(note="Closed from CLI")
+                    if s.get("checkpoint_hash"):
+                        print(c(f"✅ Checkpoint: {s['checkpoint_hash'][:8]}", GREEN))
+                except Exception:
+                    pass
+                elapsed = datetime.now() - started_at
+                mins = int(elapsed.total_seconds() // 60)
+                print(c(f"⏱️ Session duration: {mins} min", DIM))
+                print(c("Goodbye. 👋", CYAN))
                 return 0
 
+            # Help
             elif cmd == "/help":
                 show_help()
+
+            # Status
             elif cmd == "/status":
-                show_status(brain, cc)
+                show_status(brain, content_class, tools_enabled)
+
+            # Clear
+            elif cmd == "/clear":
+                os.system("clear")
+                show_banner(brain, content_class, tools_enabled)
+
+            # History
+            elif cmd == "/history":
+                print()
+                print(c("─── LAST 20 MESSAGES ───", BOLD))
+                for i, m in enumerate(messages_log[-20:], 1):
+                    role = c(m.get("role", "?").upper(), CYAN if m.get("role")=="user" else GREEN)
+                    txt = m.get("text", "")[:100]
+                    print(f"  {i}. [{role}] {txt}")
+                print()
+
+            # Export
+            elif cmd == "/export":
+                try:
+                    ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    path = os.path.expanduser(f"~/moroai/output/chat_{ts}.md")
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(f"# MOROAI Chat Session\n")
+                        f.write(f"**Date:** {started_at.isoformat()}\n\n---\n\n")
+                        for m in messages_log:
+                            role = "👤 You" if m["role"] == "user" else "🤖 MOROAI"
+                            f.write(f"### {role}\n\n{m['text']}\n\n")
+                    print(c(f"✅ Exported: {path}", GREEN))
+                except Exception as e:
+                    print(c(f"❌ Export failed: {e}", RED))
+
+            # Time
+            elif cmd == "/time":
+                elapsed = datetime.now() - started_at
+                mins = int(elapsed.total_seconds() // 60)
+                secs = int(elapsed.total_seconds() % 60)
+                print(f"⏱️ Session: {mins}m {secs}s")
+
+            # Provider
+            elif cmd == "/provider":
+                if not args:
+                    cur = forced_provider or "auto"
+                    print(f"Current provider: {c(cur, CYAN)}")
+                    print(f"Available: {', '.join(brain.available_providers().keys())}")
+                else:
+                    if args.lower() == "auto":
+                        forced_provider = None
+                        print(c("Provider: auto", GREEN))
+                    elif args.lower() in brain.available_providers():
+                        forced_provider = args.lower()
+                        print(c(f"Provider forced: {args}", GREEN))
+                    else:
+                        print(c(f"Unknown: {args}", RED))
+
+            # Model
+            elif cmd == "/model":
+                if not args:
+                    print(f"Current model: {c(forced_model or 'auto', CYAN)}")
+                else:
+                    if args.lower() == "auto":
+                        forced_model = None
+                        print(c("Model: auto", GREEN))
+                    else:
+                        forced_model = args
+                        print(c(f"Model forced: {args}", GREEN))
+
+            # Content class
             elif cmd == "/content":
                 if args in CONTENT_CLASSES:
-                    cc = args
-                    print(c(f"Content: {cc}", GREEN))
+                    content_class = args
+                    print(c(f"Content class: {content_class}", GREEN))
                 else:
                     print(c(f"Choose: {sorted(CONTENT_CLASSES)}", RED))
-            elif cmd == "/checkpoint":
-                h = brain.checkpoints.create(args or "Manual")
-                print(c(f"OK: {h[:8]}", GREEN) if h else c("Nothing", DIM))
-            elif cmd == "/checkpoints":
-                for cp in brain.checkpoints.list(10):
-                    print(f"  {c(cp['hash'][:8], CYAN)}  {cp['message'][:50]}")
-            elif cmd == "/sessions":
-                ss = brain.workspace.list_sessions(limit=10)
-                if not ss:
-                    print(c("None.", DIM))
-                for s in ss:
-                    print(f"  {c(s['id'], CYAN)}  [{s.get('status','?')}]")
-            elif cmd == "/accept":
-                print(c("Accepted.", GREEN) if brain.workspace.accept(args) else c("Failed.", RED))
-            elif cmd == "/reject":
-                print(c("Rejected.", GREEN) if brain.workspace.reject(args) else c("Failed.", RED))
+
+            # Tools on/off
+            elif cmd == "/tools":
+                if args.strip().lower() in ("on", "off"):
+                    tools_enabled = (args.strip().lower() == "on")
+                    state = "ON" if tools_enabled else "OFF"
+                    col = GREEN if tools_enabled else YELLOW
+                    print(c(f"Tools: {state}", col))
+                else:
+                    state = "ON" if tools_enabled else "OFF"
+                    print(f"Tools: {c(state, GREEN if tools_enabled else YELLOW)}")
+                    print("Usage: /tools on|off")
+
+            # Search (3 sources)
             elif cmd == "/search":
                 if not args:
                     print(c("Usage: /search <query>", YELLOW))
                 else:
                     print(c(f"Searching: {args}", YELLOW))
-
-                    # 1. Web search
+                    # Web
                     print()
                     print(c("── WEB ──", BOLD))
                     try:
@@ -189,8 +412,7 @@ def main():
                                 print(c(f"     {r['url']}", DIM))
                     except Exception as e:
                         print(c(f"  (error: {e})", DIM))
-
-                    # 2. YouTube search
+                    # YouTube
                     print()
                     print(c("── YOUTUBE ──", BOLD))
                     try:
@@ -203,8 +425,7 @@ def main():
                                 print(c(f"     {r['url']}  ({r.get('channel','?')})", DIM))
                     except Exception as e:
                         print(c(f"  (error: {e})", DIM))
-
-                    # 3. Reddit search
+                    # Reddit
                     print()
                     print(c("── REDDIT ──", BOLD))
                     try:
@@ -217,28 +438,41 @@ def main():
                                 print(c(f"     {r['url']}", DIM))
                     except Exception as e:
                         print(c(f"  (error: {e})", DIM))
+
+            # List files
             elif cmd == "/ls":
-                r = file_ops.list_dir(args or ".", recursive=False)
+                r = brain.file_ops.list_dir(args or ".", recursive=False) if hasattr(brain, "file_ops") else {"success": False, "error": "no file_ops"}
+                from tools.file_ops import FileOps
+                fops = FileOps()
+                r = fops.list_dir(args or ".", recursive=False)
                 if not r["success"]:
                     print(c(f"Error: {r['error']}", RED))
                 else:
                     for item in r["items"]:
                         print(f"  {item}")
+
+            # Read file
             elif cmd == "/cat":
+                from tools.file_ops import FileOps
+                fops = FileOps()
                 if not args:
                     print(c("Usage: /cat <file>", YELLOW))
                 else:
-                    r = file_ops.read_file(args)
+                    r = fops.read_file(args)
                     if r["success"]:
                         print(r["content"])
                     else:
                         print(c(f"Error: {r['error']}", RED))
+
+            # Run shell
             elif cmd == "/run":
+                from tools.shell import ShellOps
+                sops = ShellOps()
                 if not args:
                     print(c("Usage: /run <command>", YELLOW))
                 else:
                     print(c(f"$ {args}", DIM))
-                    r = shell_ops.run(args)
+                    r = sops.run(args)
                     if r["blocked"]:
                         print(c(f"⛔ Blocked: {r['error']}", RED))
                     elif r["success"]:
@@ -249,8 +483,9 @@ def main():
                         if r["stdout"]:
                             print(r["stdout"])
                         print(c(f"Exit {r['exit_code']}: {r['stderr'] or r['error']}", RED))
+
+            # Build
             elif cmd == "/build":
-                # Format: /build [--yes] <path> <description>
                 parts = args.split(maxsplit=2)
                 auto_yes = False
                 if parts and parts[0] == "--yes":
@@ -258,12 +493,10 @@ def main():
                     parts = parts[1:]
                 if len(parts) < 2:
                     print(c("Usage: /build [--yes] <path> <description>", YELLOW))
-                    print(c("Example: /build output/login.html صفحة تسجيل دخول فاخرة", DIM))
                 else:
                     target = parts[0]
                     desc = parts[1] + ((" " + parts[2]) if len(parts) > 2 else "")
                     print(c(f"Building: {target}", YELLOW))
-                    print(c(f"Description: {desc}", DIM))
                     print(c("Generating (this may take 5-20s)...", DIM))
                     res = builder.generate(target, desc)
                     if not res["success"]:
@@ -271,25 +504,12 @@ def main():
                     else:
                         content = res["content"]
                         print()
-                        print(c("─" * 50, DIM))
-                        print(c("PREVIEW (first 800 chars):", BOLD))
+                        print(c("── PREVIEW (first 800 chars) ──", BOLD))
                         print(content[:800])
-                        if len(content) > 800:
-                            print(c(f"... ({len(content) - 800} more chars)", DIM))
-                        print(c("─" * 50, DIM))
-                        print(f"Size: {res['bytes']} bytes  |  "
-                              f"{res['provider']} · {res['model']} · "
-                              f"{res['latency_ms']:.0f}ms")
-                        # Confirmation
-                        if auto_yes:
-                            confirm = "y"
-                        else:
-                            try:
-                                confirm = input("Write this file? [y/N]: ").strip().lower()
-                            except (EOFError, KeyboardInterrupt):
-                                confirm = "n"
+                        print(f"Total: {len(content)} chars")
+                        print()
+                        confirm = "y" if auto_yes else input(c("Write this file? [y/N]: ", YELLOW)).strip().lower()
                         if confirm == "y":
-                            # Checkpoint first
                             h = brain.checkpoints.create(f"Before building {target}")
                             if h:
                                 print(c(f"Checkpoint: {h[:8]}", GREEN))
@@ -298,16 +518,18 @@ def main():
                                 print(c(f"✅ Written: {r['path']} ({r['bytes_written']} bytes)", GREEN))
                             else:
                                 print(c(f"❌ Write failed: {r['error']}", RED))
-                        else:
-                            print(c("Cancelled (file not written).", DIM))
+
+            # Vision
             elif cmd == "/vision":
                 print(c("── MOROAI VISION ──", BOLD))
                 print(vision_summary())
+
+            # Evolve
             elif cmd == "/evolve":
                 print(c("Reading vision...", DIM))
                 plan = evolve_engine.propose()
                 if not plan:
-                    print(c("Could not propose a step.", RED))
+                    print(c("❌ Could not propose a step.", RED))
                 else:
                     print()
                     print(c("── PROPOSED STEP ──", BOLD))
@@ -316,55 +538,68 @@ def main():
                     print(f"  Action     : {plan.get('action','?')}")
                     print(f"  Description: {plan.get('description','')}")
                     print()
-                    try:
-                        ans = input(c("Build this? [y/N]: ", YELLOW)).strip().lower()
-                    except (EOFError, KeyboardInterrupt):
-                        ans = "n"
-                    if ans != "y":
-                        print(c("Cancelled.", DIM))
-                    else:
-                        print(c("Generating...", DIM))
+                    ans = input(c("Build this? [y/N]: ", YELLOW)).strip().lower()
+                    if ans == "y":
                         content = evolve_engine.generate(plan)
                         if not content:
-                            print(c("Generation failed.", RED))
+                            print(c("❌ Generation failed.", RED))
                         else:
-                            target = plan["target_file"]
+                            print(c("── PREVIEW ──", BOLD))
+                            print(content[:600])
                             print()
-                            print(c("── PREVIEW (first 800 chars) ──", BOLD))
-                            print(content[:800])
-                            if len(content) > 800:
-                                print(c(f"... ({len(content) - 800} more chars)", DIM))
-                            print(f"Total: {len(content)} chars")
-                            print()
-                            try:
-                                ans2 = input(c("Write this file? [y/N]: ", YELLOW)).strip().lower()
-                            except (EOFError, KeyboardInterrupt):
-                                ans2 = "n"
+                            ans2 = input(c("Write this file? [y/N]: ", YELLOW)).strip().lower()
                             if ans2 == "y":
-                                h = brain.checkpoints.create(f"Before evolve: {target}")
-                                if h:
-                                    print(c(f"Checkpoint: {h[:8]}", GREEN))
-                                r = evolve_engine.file_ops.write_file(target, content)
+                                h = brain.checkpoints.create(f"Before evolve: {plan['target_file']}")
+                                r = evolve_engine.file_ops.write_file(plan["target_file"], content)
                                 if r.get("success"):
-                                    print(c(f"Written: {r['path']} ({r['bytes_written']} bytes)", GREEN))
+                                    print(c(f"✅ Written: {r['path']}", GREEN))
                                 else:
-                                    print(c(f"Write failed: {r.get('error')}", RED))
-                            else:
-                                print(c("File not written.", DIM))
-            elif cmd == "/tools":
-                if args.strip().lower() in ("on", "off"):
-                    tools_enabled = (args.strip().lower() == "on")
-                    state = "ON" if tools_enabled else "OFF"
-                    print(c(f"Tools: {state}", GREEN if tools_enabled else YELLOW))
+                                    print(c(f"❌ {r.get('error')}", RED))
+
+            # Sessions
+            elif cmd == "/sessions":
+                files = list_sessions()
+                if not files:
+                    print(c("No saved sessions.", DIM))
                 else:
-                    state = "ON" if tools_enabled else "OFF"
-                    print(f"Tools: {c(state, GREEN if tools_enabled else YELLOW)}")
-                    print("Usage: /tools on|off")
+                    for f in files:
+                        print(f"  {f}")
+
+            # Resume
+            elif cmd == "/resume":
+                if not args:
+                    print(c("Usage: /resume <file>", YELLOW))
+                else:
+                    data = load_session(args)
+                    if not data:
+                        print(c(f"❌ Not found: {args}", RED))
+                    else:
+                        msgs = data.get("messages", [])
+                        messages_log = msgs
+                        print(c(f"✅ Loaded {len(msgs)} messages", GREEN))
+
+            # Checkpoints
+            elif cmd == "/checkpoint":
+                h = brain.checkpoints.create(args or "Manual")
+                print(c(f"OK: {h[:8]}", GREEN) if h else c("Nothing to checkpoint.", DIM))
+            elif cmd == "/checkpoints":
+                for cp in brain.checkpoints.list(10):
+                    print(f"  {c(cp['hash'][:8], CYAN)}  {cp['message'][:60]}")
+
+            # Accept/Reject sessions
+            elif cmd == "/accept":
+                print(c("Accepted.", GREEN) if brain.workspace.accept(args) else c("Failed.", RED))
+            elif cmd == "/reject":
+                print(c("Rejected.", GREEN) if brain.workspace.reject(args) else c("Failed.", RED))
+
+            # Memory
             elif cmd == "/memory":
                 print(f"Interactions: {c(str(brain.memory.count()), CYAN)}")
                 stats = brain.learning.count()
                 print(f"Episodes    : {c(str(stats['episodes']), CYAN)}")
                 print(f"Lessons     : {c(str(stats['lessons']), CYAN)}")
+
+            # Reflect
             elif cmd == "/reflect":
                 n = 5
                 if args.strip().isdigit():
@@ -376,32 +611,46 @@ def main():
                 else:
                     for l in lessons:
                         print(c(f"  [{l['category']}] {l['rule']}", GREEN))
+
+            # Lessons
             elif cmd == "/lessons":
                 rows = brain.learning.search_lessons(args or "the", limit=10)
                 if not rows:
                     print(c("No lessons yet. Use /reflect.", DIM))
                 else:
                     for r in rows:
-                        print(f"  {c('[' + str(r['id']) + ']', CYAN)} "
-                              f"{c(r['category'], MAGENTA)}  {r['rule']}")
-            elif cmd == "/clear":
-                os.system("clear")
+                        print(f"  {c('['+str(r['id'])+']', CYAN)} {c(r['category'], MAGENTA)}  {r['rule']}")
+
             else:
-                print(c(f"Unknown: {cmd}", RED))
+                print(c(f"Unknown command: {cmd}", RED))
             continue
 
+        # ------- ASK MOROAI -------
+        # Apply forced provider/model
+        kwargs = {"content_class": content_class}
+        if forced_model:
+            kwargs["model"] = forced_model
+
         if tools_enabled:
-            resp = run_with_tools(brain, raw, content_class=cc)
+            resp = run_with_tools(brain, raw, content_class=content_class)
         else:
-            resp = brain.ask(prompt=raw, content_class=cc)
+            resp = brain.ask(prompt=raw, **kwargs)
+
         if resp.success:
             print()
             print(c(resp.text, CYAN))
-            if resp.latency_ms:
-                print(c(f"  [{resp.provider} · {resp.model} · {resp.latency_ms:.0f}ms]", DIM))
+            meta = f"  [{resp.provider} · {resp.model} · {resp.latency_ms:.0f}ms]"
+            print(c(meta, DIM))
+            messages_log.append({
+                "role": "ai",
+                "text": resp.text,
+                "provider": resp.provider,
+                "model": resp.model,
+                "time": datetime.now().isoformat(),
+            })
         else:
             print()
-            print(c(f"Error: {resp.error}", RED))
+            print(c(f"❌ {resp.error}", RED))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,42 @@
+{
+  "created": "2026-09-30T19:37:14.389558",
+  "meta": {
+    "content_class": "standard",
+    "tools": true,
+    "providers": [
+      "groq",
+      "gemini",
+      "openrouter",
+      "ollama"
+    ]
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "/help",
+      "time": "2026-09-30T19:35:57.855940"
+    },
+    {
+      "role": "user",
+      "text": "/time",
+      "time": "2026-09-30T19:36:16.994541"
+    },
+    {
+      "role": "user",
+      "text": "من أنت؟",
+      "time": "2026-09-30T19:36:21.042755"
+    },
+    {
+      "role": "ai",
+      "text": "أنا MOROAI، مساعد ذكاء اصطناعي خاص مبني لمالكه.",
+      "provider": "groq",
+      "model": "qwen/qwen3.8-27b",
+      "time": "2026-09-30T19:36:21.753433"
+    },
+    {
+      "role": "user",
+      "text": "/exit",
+      "time": "2026-09-30T19:37:14.378909"
+    }
+  ]
+}
