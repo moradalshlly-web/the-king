@@ -32,6 +32,7 @@ from brain.builder import Builder
 from brain.evolve import EvolveEngine
 from brain.vision import vision_summary
 from brain import search_history
+from brain import history_updater
 from tools.reddit import search_reddit
 from tools.web_search import search_web
 from tools.youtube import search_youtube
@@ -253,6 +254,17 @@ def main():
 
     # Show banner
     show_banner(brain, content_class, tools_enabled)
+
+    # Notify about stale searches (do NOT refresh automatically)
+    try:
+        st = history_updater.status()
+        if st.get("stale", 0) > 0:
+            n = st['stale']
+            print(c(f"🔄 {n} search(es) need refresh (older than 12h)", YELLOW))
+            print(c(f"   Run /history refresh-all to update them", DIM))
+            print()
+    except Exception:
+        pass
     if pending:
         print(c(f"📦 You have {len(pending)} pending session(s). Use /sessions.", YELLOW))
         print()
@@ -374,6 +386,21 @@ def main():
                         print(c(f"✅ Cleared {n} entries.", GREEN))
                     else:
                         print(c("Cancelled.", DIM))
+
+                elif sub == "refresh-all":
+                    st = history_updater.status()
+                    if st["stale"] == 0:
+                        print(c("Nothing to refresh. All searches are fresh.", GREEN))
+                    else:
+                        print()
+                        print(c(f"REFRESHING {min(st['stale'], 3)} STALE SEARCH(ES)", BOLD))
+                        print(c(f"Total stale: {st['stale']} (max 3 per run)", DIM))
+                        print()
+                        result = history_updater.refresh_stale(verbose=True)
+                        print()
+                        print(c(f"Refreshed: {result['refreshed']}", GREEN))
+                        if result["failed"]:
+                            print(c(f"Failed: {result['failed']}", RED))
 
                 elif sub == "update":
                     if not subargs:
