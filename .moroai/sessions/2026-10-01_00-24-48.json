@@ -1,0 +1,46 @@
+{
+  "created": "2026-10-01T00:24:48.526297",
+  "meta": {
+    "content_class": "standard",
+    "tools": true,
+    "providers": [
+      "groq",
+      "gemini",
+      "ollama_cloud",
+      "openrouter",
+      "ollama"
+    ]
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "/history",
+      "time": "2026-10-01T00:22:17.540711"
+    },
+    {
+      "role": "user",
+      "text": "/history show github_search-a8e58a462c89",
+      "time": "2026-10-01T00:22:38.203761"
+    },
+    {
+      "role": "user",
+      "text": "/history delete github_search-a8e58a462c89",
+      "time": "2026-10-01T00:23:00.203530"
+    },
+    {
+      "role": "user",
+      "text": "/history delete github_search-a8e58a462c89",
+      "time": "2026-10-01T00:23:45.841226"
+    },
+    {
+      "role": "user",
+      "text": "/history",
+      "time": "2026-10-01T00:24:05.455404"
+    },
+    {
+      "role": "user",
+      "text": "/exit",
+      "time": "2026-10-01T00:24:48.497452"
+    }
+  ]
+}
