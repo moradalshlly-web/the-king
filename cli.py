@@ -19,6 +19,8 @@ from brain.builder import Builder
 from brain.evolve import EvolveEngine
 from brain.vision import vision_summary
 from tools.reddit import search_reddit
+from tools.web_search import search_web
+from tools.youtube import search_youtube
 from tools.file_ops import FileOps
 from tools.shell import ShellOps
 
@@ -172,17 +174,49 @@ def main():
                 if not args:
                     print(c("Usage: /search <query>", YELLOW))
                 else:
-                    print(c(f"Searching Reddit: {args}", YELLOW))
-                    results = search_reddit(args, limit=5)
-                    if not results:
-                        print(c("No results (rate limit or network).", DIM))
-                    else:
-                        for i, r in enumerate(results, 1):
-                            print()
-                            print(c(f"[{i}] r/{r['subreddit']}", BOLD))
-                            print(f"    {r['title'][:90]}")
-                            print(c(f"    {r['url']}", CYAN))
-                            print(c(f"    by {r['author']} on {r['updated'][:10]}", DIM))
+                    print(c(f"Searching: {args}", YELLOW))
+
+                    # 1. Web search
+                    print()
+                    print(c("── WEB ──", BOLD))
+                    try:
+                        wres = search_web(args, limit=5)
+                        if not wres or wres[0].get("title") == "ERROR":
+                            print(c("  (no web results)", DIM))
+                        else:
+                            for i, r in enumerate(wres, 1):
+                                print(f"  {c(str(i), CYAN)}. {r['title'][:80]}")
+                                print(c(f"     {r['url']}", DIM))
+                    except Exception as e:
+                        print(c(f"  (error: {e})", DIM))
+
+                    # 2. YouTube search
+                    print()
+                    print(c("── YOUTUBE ──", BOLD))
+                    try:
+                        yres = search_youtube(args, limit=3)
+                        if not yres or yres[0].get("title") == "ERROR":
+                            print(c("  (no youtube results)", DIM))
+                        else:
+                            for i, r in enumerate(yres, 1):
+                                print(f"  {c(str(i), CYAN)}. {r['title'][:80]}")
+                                print(c(f"     {r['url']}  ({r.get('channel','?')})", DIM))
+                    except Exception as e:
+                        print(c(f"  (error: {e})", DIM))
+
+                    # 3. Reddit search
+                    print()
+                    print(c("── REDDIT ──", BOLD))
+                    try:
+                        rres = search_reddit(args, limit=3)
+                        if not rres:
+                            print(c("  (no reddit results)", DIM))
+                        else:
+                            for i, r in enumerate(rres, 1):
+                                print(f"  {c(str(i), CYAN)}. r/{r['subreddit']}: {r['title'][:70]}")
+                                print(c(f"     {r['url']}", DIM))
+                    except Exception as e:
+                        print(c(f"  (error: {e})", DIM))
             elif cmd == "/ls":
                 r = file_ops.list_dir(args or ".", recursive=False)
                 if not r["success"]:
