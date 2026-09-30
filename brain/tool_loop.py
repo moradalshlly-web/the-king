@@ -42,6 +42,8 @@ def register_default_tools() -> None:
     from tools.file_ops import FileOps
     from tools.shell import ShellOps
     from tools.reddit import search_reddit
+    from tools.web_search import search_web
+    from tools.youtube import search_youtube
 
     fops = FileOps()
     sops = ShellOps()
@@ -89,6 +91,28 @@ def register_default_tools() -> None:
         },
     )
 
+    # web_search
+    TR.register(
+        name="web_search",
+        description="Search the web via DuckDuckGo for information.",
+        params='query="<text>" limit=5',
+        func=lambda query, limit=5: {
+            "success": True,
+            "result": _format_web(search_web(query, int(limit))),
+        },
+    )
+
+    # youtube_search
+    TR.register(
+        name="youtube_search",
+        description="Search YouTube for videos.",
+        params='query="<text>" limit=3',
+        func=lambda query, limit=3: {
+            "success": True,
+            "result": _format_youtube(search_youtube(query, int(limit))),
+        },
+    )
+
     _registered = True
 
 
@@ -105,6 +129,29 @@ def _format_reddit(posts) -> str:
 # ============================================================
 # The loop
 # ============================================================
+
+def _format_web(results) -> str:
+    if not results:
+        return "(no results)"
+    lines = []
+    for i, r in enumerate(results, 1):
+        lines.append(f"{i}. {r['title']}")
+        lines.append(f"   {r['url']}")
+        if r.get("snippet"):
+            lines.append(f"   {r['snippet'][:150]}")
+    return "\n".join(lines)
+
+
+def _format_youtube(results) -> str:
+    if not results:
+        return "(no videos)"
+    lines = []
+    for i, r in enumerate(results, 1):
+        lines.append(f"{i}. {r['title']}")
+        lines.append(f"   {r['url']}")
+        lines.append(f"   by {r.get('channel','?')}  ({r.get('duration','?')}s)")
+    return "\n".join(lines)
+
 
 def run_with_tools(
     brain,
