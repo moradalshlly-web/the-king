@@ -1,0 +1,31 @@
+{
+  "created": "2026-10-01T00:35:25.521292",
+  "meta": {
+    "content_class": "standard",
+    "tools": true,
+    "providers": [
+      "groq",
+      "gemini",
+      "ollama_cloud",
+      "openrouter",
+      "ollama"
+    ]
+  },
+  "messages": [
+    {
+      "role": "user",
+      "text": "/history",
+      "time": "2026-10-01T00:35:12.628270"
+    },
+    {
+      "role": "user",
+      "text": "/history refresh-all",
+      "time": "2026-10-01T00:35:16.973866"
+    },
+    {
+      "role": "user",
+      "text": "/exit",
+      "time": "2026-10-01T00:35:25.514620"
+    }
+  ]
+}
