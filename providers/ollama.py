@@ -37,8 +37,18 @@ OLLAMA_DEFAULT_CONFIG = ProviderConfig(
 class OllamaProvider(BaseProvider):
     def __init__(self, config: Optional[ProviderConfig] = None):
         super().__init__(config or OLLAMA_DEFAULT_CONFIG)
-        # Allow override via env
-        env_host = os.getenv("OLLAMA_HOST", "").strip()
+        # Try rendezvous first (auto-detects Colab URL from Gist)
+        env_host = ""
+        try:
+            from brain.rendezvous import get_url as _get_url
+            env_host = _get_url(force=False) or ""
+        except Exception:
+            pass
+
+        # Fallback to environment variable
+        if not env_host:
+            env_host = os.getenv("OLLAMA_HOST", "").strip()
+
         if env_host:
             self.config = ProviderConfig(
                 name=self.config.name,
