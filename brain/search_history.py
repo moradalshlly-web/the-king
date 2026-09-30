@@ -45,6 +45,7 @@ ITEMS_DIR = os.path.join(HISTORY_DIR, "items")
 INDEX_FILE = os.path.join(HISTORY_DIR, "index.json")
 
 REFRESH_INTERVAL = 12 * 3600  # 12 hours
+MAX_ENTRIES = 500  # auto-prune oldest when exceeded
 
 
 # ============================================================
@@ -153,6 +154,12 @@ def add_or_update(
         })
         _write_index(idx)
 
+    # Auto-prune if we exceeded MAX_ENTRIES
+    try:
+        _prune_if_needed()
+    except Exception:
+        pass
+
     return entry_id
 
 
@@ -221,12 +228,39 @@ def entries_to_refresh(limit: int = 3) -> List[str]:
     return stale[:limit]
 
 
+def _prune_if_needed() -> int:
+    """
+    If total entries exceed MAX_ENTRIES, delete oldest ones.
+    Returns number pruned.
+    """
+    idx = _read_index()
+    entries = idx.get("entries", [])
+    if len(entries) <= MAX_ENTRIES:
+        return 0
+
+    # Sort by updated_at ascending (oldest first)
+    entries_sorted = sorted(entries, key=lambda e: e.get("updated_at", ""))
+    to_remove = entries_sorted[:len(entries) - MAX_ENTRIES]
+
+    for e in to_remove:
+        try:
+            os.remove(_item_path(e["id"]))
+        except Exception:
+            pass
+
+    keep_ids = {e["id"] for e in entries_sorted[len(entries) - MAX_ENTRIES:]}
+    idx["entries"] = [e for e in entries if e["id"] in keep_ids]
+    _write_index(idx)
+    return len(to_remove)
+
+
 def stats() -> Dict[str, int]:
     """Return basic stats."""
     idx = _read_index()
     return {
         "total": len(idx.get("entries", [])),
         "stale": sum(1 for e in idx.get("entries", []) if needs_refresh(e["id"])),
+        "max": MAX_ENTRIES,
     }
 
 
