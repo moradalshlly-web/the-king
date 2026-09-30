@@ -192,13 +192,22 @@ def run_with_tools(
         formatted = PP.format_results(result)
 
         # Build a new prompt that includes the tool result
+        FORMAT_RULES = (
+            "قدم إجابة عربية منظمة. لكل عنصر اعرض 4 أسطر فقط:\n"
+            "  🎯 ماهية: <وصف في سطر واحد>\n"
+            "  ⭐ التقييم: <ميزته الأساسية في سطر واحد>\n"
+            "  🔧 للمحاكاة: <أفضل بديل أو استخدام>\n"
+            "  📜 الرخصة: <SPDX> — مسموح/ممنوع (باختصار)\n"
+            "افصل بين العناصر بسطر فارغ.\n"
+            "لا تكتب جداول. لا تكرر. لا تطل."
+        )
+
         enriched_prompt = (
             f"سياق من الأداة ({detected['tool']}):\n\n"
             f"{formatted}\n\n"
             f"---\n"
             f"سؤال المستخدم الأصلي: {prompt}\n\n"
-            f"قدم إجابة نهائية بالعربية بناءً على النتائج أعلاه. "
-            f"لا تقل أنك لا تعرف، استخدم البيانات المعروضة."
+            f"{FORMAT_RULES}"
         )
 
         # Call the LLM with the enriched prompt (no tool loop needed)
