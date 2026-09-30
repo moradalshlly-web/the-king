@@ -45,6 +45,7 @@ def register_default_tools() -> None:
     from tools.reddit import search_reddit
     from tools.web_search import search_web
     from tools.youtube import search_youtube
+    from tools.github import search_repos
 
     fops = FileOps()
     sops = ShellOps()
@@ -111,6 +112,17 @@ def register_default_tools() -> None:
         func=lambda query, limit=3: {
             "success": True,
             "result": _format_youtube(search_youtube(query, int(limit))),
+        },
+    )
+
+    # github_search
+    TR.register(
+        name="github_search",
+        description="Search GitHub for open-source projects (returns stars, license, language).",
+        params='query="<text>" limit=5',
+        func=lambda query, limit=5: {
+            "success": True,
+            "result": _format_github(search_repos(query, int(limit))),
         },
     )
 

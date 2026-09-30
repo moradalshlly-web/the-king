@@ -43,6 +43,13 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "github_search": [
+        r"ابحث\s+في\s+github",
+        r"ابحث\s+في\s+جيتهاب",
+        r"\bgithub\s+search\b",
+        r"مشاريع\s+مفتوحة",
+        r"مشروع\s+مفتوح\s+المصدر",
+    ],
     "search_reddit": [
         r"ابحث\s+في\s+ريديت",
         r"ابحث\s+في\s+reddit",
@@ -98,6 +105,10 @@ def _extract_query(msg: str) -> str:
         "search the web for ",
         "search youtube for ",
         "search reddit for ",
+        "ابحث في github عن ",
+        "ابحث في جيتهاب عن ",
+        "ابحث في جيت هاب عن ",
+        "search github for ",
         "search web for ",
         "google ",
         "youtube ",
@@ -156,6 +167,15 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
     msg = message.strip()
     msg_lower = msg.lower()
 
+    # Priority checks (specific phrases before generic "ابحث عن")
+    github_phrases = ["مشاريع مفتوحة", "مشروع مفتوح", "open source project", "github.com"]
+    for kw in github_phrases:
+        if kw in msg_lower:
+            query = _extract_query(msg)
+            if not query or len(query) < 3:
+                query = msg
+            return {"tool": "github_search", "args": {"query": query, "limit": 5}}
+
     for tool_name, patterns in PATTERNS.items():
         for pat in patterns:
             if re.search(pat, msg_lower, re.IGNORECASE):
@@ -169,6 +189,8 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "youtube_search", "args": {"query": query, "limit": 3}}
                 if tool_name == "search_reddit":
                     return {"tool": "search_reddit", "args": {"query": query, "limit": 3}}
+                if tool_name == "github_search":
+                    return {"tool": "github_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "read_file":
                     return {"tool": "read_file", "args": {"path": query}}
                 if tool_name == "list_dir":
@@ -201,6 +223,11 @@ def execute_preempt(tool_call: Dict[str, Any]) -> Dict[str, Any]:
             from tools.reddit import search_reddit
             results = search_reddit(args["query"], limit=args.get("limit", 3))
             return {"success": True, "results": results, "kind": "reddit"}
+
+        if tool == "github_search":
+            from tools.github import search_repos
+            results = search_repos(args["query"], limit=args.get("limit", 5))
+            return {"success": True, "results": results, "kind": "github"}
 
         if tool == "read_file":
             from tools.file_ops import FileOps
@@ -242,6 +269,17 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"{i}. {r.get('title','')}")
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
+        return "\n".join(lines)
+
+    if kind == "github":
+        lines = ["[نتائج البحث في GitHub]"]
+        for i, r in enumerate(result.get("results", [])[:5], 1):
+            if "error" in r:
+                continue
+            lines.append(f"{i}. {r.get('full_name','')} ({r.get('stars',0)} stars)")
+            lines.append(f"   {r.get('description','')[:150]}")
+            lines.append(f"   Language: {r.get('language','?')}  License: {r.get('license','?')}")
+            lines.append(f"   {r.get('url','')}")
         return "\n".join(lines)
 
     if kind == "reddit":
