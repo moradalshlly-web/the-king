@@ -7,3 +7,4 @@ __pycache__/
 .moroai/checkpoints/
 output/
 .moroai/search_cache/
+.moroai/search_history/

@@ -17,6 +17,7 @@ This guarantees tool usage regardless of LLM behavior.
 
 import re
 from brain import search_cache
+from brain import search_history
 from typing import Optional, Dict, Any, List
 
 
@@ -214,6 +215,11 @@ def execute_preempt(tool_call: Dict[str, Any]) -> Dict[str, Any]:
         cached = search_cache.get(tool, args)
         if cached is not None:
             cached["_from_cache"] = True
+            # ALSO update history for cached results
+            try:
+                search_history.add_or_update(tool, args, cached)
+            except Exception:
+                pass
             return cached
     except Exception:
         pass
@@ -225,6 +231,13 @@ def execute_preempt(tool_call: Dict[str, Any]) -> Dict[str, Any]:
     try:
         if result.get("success"):
             search_cache.put(tool, args, result)
+    except Exception:
+        pass
+
+    # Save to permanent history if successful
+    try:
+        if result.get("success"):
+            search_history.add_or_update(tool, args, result)
     except Exception:
         pass
 
