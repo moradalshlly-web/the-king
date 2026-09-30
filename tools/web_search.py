@@ -62,10 +62,20 @@ def search_web(query: str, limit: int = 10) -> List[Dict[str, str]]:
     params = urllib.parse.urlencode({"q": query, "kl": "ar-ar"})
     url = f"{DDG_HTML_URL}?{params}"
 
-    try:
-        html = _fetch(url)
-    except Exception as e:
-        return [{"title": "ERROR", "url": "", "snippet": f"Network: {e}"}]
+    html = None
+    last_err = None
+    for attempt in range(3):
+        try:
+            html = _fetch(url)
+            if 'class="result__a"' in html:
+                break
+            time.sleep(2 * (attempt + 1))
+        except Exception as e:
+            last_err = e
+            time.sleep(2 * (attempt + 1))
+
+    if html is None:
+        return [{"title": "ERROR", "url": "", "snippet": f"Network: {last_err}"}]
 
     try:
         soup = BeautifulSoup(html, "html.parser")
