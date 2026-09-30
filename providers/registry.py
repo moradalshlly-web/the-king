@@ -169,7 +169,12 @@ class ProviderRegistry:
 
         last_error = ""
         for provider in chain:
-            models_to_try = [model] if model else provider.list_models()
+            # If specific model requested, try it first, then fall back to others
+            if model:
+                all_models = provider.list_models()
+                models_to_try = [model] + [m for m in all_models if m != model]
+            else:
+                models_to_try = provider.list_models()
             if not models_to_try:
                 continue
 

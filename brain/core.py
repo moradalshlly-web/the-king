@@ -25,6 +25,7 @@ from typing import Optional, Dict, Any
 
 from brain.core_paths import PROJECT_ROOT
 from brain import prime_directives as PD
+from brain import router as task_router
 from brain import owner_profile as OP
 
 from memory.checkpoint import CheckpointManager
@@ -214,6 +215,17 @@ class MOROAI:
                 "\n\nRelevant lessons learned from past interactions:\n"
                 + bullets
             )
+
+        # 3. SMART ROUTING (pick best model for this task type)
+        if model is None:
+            try:
+                avail = self.available_providers()
+                available = [n for n, info in avail.items() if info.get("is_available")]
+                routing = task_router.analyze(prompt, available)
+                if routing.get("model"):
+                    model = routing["model"]
+            except Exception:
+                pass
 
         # 4. EXECUTE via registry (with automatic fallback)
         # Merge MOROAI identity + lessons + any per-call system prompt
