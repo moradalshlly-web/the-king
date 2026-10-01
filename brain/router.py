@@ -63,17 +63,17 @@ MODEL_PREFERENCES = {
         "gemini": "gemini-3.8-flash",
     },
     "code": {
-        "ollama_cloud": "minimax-m2.5:cloud",
+        "ollama_cloud": "gpt-oss:120b-cloud",
         "groq": "qwen/qwen3.8-27b",
         "ollama": "qwen2.5:7b",
     },
     "reasoning": {
-        "ollama_cloud": "deepseek-v4-flash:cloud",
+        "ollama_cloud": "nemotron-3-super:cloud",
         "gemini": "gemini-3.8-flash",
         "groq": "qwen/qwen3.8-27b",
     },
     "story": {
-        "ollama_cloud": "mistral-large-3:675b-cloud",
+        "ollama_cloud": "nemotron-3-super:cloud",
         "gemini": "gemini-3.8-flash",
         "groq": "qwen/qwen3.8-27b",
     },
@@ -82,11 +82,11 @@ MODEL_PREFERENCES = {
         "gemini": "gemini-3.8-flash",
     },
     "quick": {
-        "ollama_cloud": "ministral-3:8b-cloud",
+        "ollama_cloud": "gpt-oss:20b-cloud",
         "groq": "llama-3.1-8b-instant",
     },
     "general": {
-        "ollama_cloud": "qwen3.5:cloud",
+        "ollama_cloud": "gpt-oss:20b-cloud",
     },
 }
 

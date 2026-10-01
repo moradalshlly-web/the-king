@@ -4,11 +4,8 @@ providers/ollama_cloud.py
 
 Ollama Cloud provider adapter for MOROAI.
 
-Runs large models on Ollama's cloud without a local GPU.
-Free tier: $0, no credit card, 1 concurrent session,
-resets every 5 hours (session) / 7 days (weekly).
-
-Models categorized by specialization.
+Free tier: $0, no credit card.
+Verified working models (October 2026).
 """
 
 import json
@@ -24,28 +21,20 @@ except ImportError:
 
 
 # ============================================================
-# Model catalog (free tier only)
+# Verified working models (October 2026)
 # ============================================================
 
 OLLAMA_CLOUD_MODELS = {
-    # Programming & coding
-    "minimax-m2.5:cloud":        {"type": "code",        "priority": 1},
-    "gpt-oss:120b-cloud":        {"type": "code",        "priority": 2},
-    "qwen3-coder-next:cloud":    {"type": "code",        "priority": 3},
-    "devstral-small-2:24b-cloud":{"type": "code",        "priority": 4},
+    # Code + general (fast & powerful)
+    "gpt-oss:120b-cloud":       {"type": "code",      "priority": 1, "speed": "fast"},
+    "gpt-oss:20b-cloud":        {"type": "fast",      "priority": 1, "speed": "fast"},
 
-    # Multilingual / general
-    "gemma4:31b-cloud":          {"type": "multilingual","priority": 1},
-    "qwen3.5:cloud":             {"type": "multilingual","priority": 2},
+    # Multilingual
+    "gemma4:31b-cloud":         {"type": "multilingual", "priority": 1, "speed": "medium"},
 
-    # Reasoning & deep analysis
-    "deepseek-v4-flash:cloud":   {"type": "reasoning",   "priority": 1},
-    "mistral-large-3:675b-cloud":{"type": "reasoning",   "priority": 2},
-
-    # Lightweight / fast
-    "gpt-oss:20b-cloud":         {"type": "fast",        "priority": 1},
-    "ministral-3:14b-cloud":     {"type": "fast",        "priority": 2},
-    "ministral-3:8b-cloud":      {"type": "fast",        "priority": 3},
+    # Reasoning
+    "nemotron-3-super:cloud":   {"type": "reasoning", "priority": 1, "speed": "slow"},
+    "nemotron-3-nano:30b-cloud":{"type": "fast",      "priority": 2, "speed": "fast"},
 }
 
 
@@ -83,7 +72,6 @@ class OllamaCloudProvider(BaseProvider):
         return list(self.config.models)
 
     def list_models_by_type(self, model_type: str) -> List[str]:
-        """Return models filtered by type (code, multilingual, reasoning, fast)."""
         return [m for m, info in OLLAMA_CLOUD_MODELS.items()
                 if info.get("type") == model_type]
 
@@ -98,10 +86,7 @@ class OllamaCloudProvider(BaseProvider):
         start = self._start_timer()
 
         if not self.is_available():
-            return self._error_response(
-                "Ollama Cloud unavailable (no API key).",
-                code=503,
-            )
+            return self._error_response("Ollama Cloud unavailable (no API key).", code=503)
 
         chosen_model = model or self.config.models[0]
 
@@ -154,16 +139,16 @@ class OllamaCloudProvider(BaseProvider):
                 err_body = e.read().decode("utf-8")
             except Exception:
                 pass
+            # Mark retired/paid models so router can skip them
+            code = e.code
             return self._error_response(
-                f"HTTP {e.code}: {e.reason} | {err_body[:200]}",
-                code=e.code,
+                f"HTTP {code}: {e.reason} | {err_body[:200]}",
+                code=code,
             )
         except urllib.error.URLError as e:
             return self._error_response(f"Network: {e.reason}", code=503)
         except Exception as e:
-            return self._error_response(
-                f"{type(e).__name__}: {e}", code=500,
-            )
+            return self._error_response(f"{type(e).__name__}: {e}", code=500)
 
 
 if __name__ == "__main__":
@@ -173,4 +158,6 @@ if __name__ == "__main__":
     print(f"Total    : {len(p.list_models())} models")
     print()
     for t in ["code", "multilingual", "reasoning", "fast"]:
-        print(f"{t:15}: {p.list_models_by_type(t)}")
+        models = p.list_models_by_type(t)
+        if models:
+            print(f"{t:15}: {models}")
