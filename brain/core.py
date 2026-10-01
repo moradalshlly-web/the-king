@@ -222,7 +222,8 @@ class MOROAI:
                 + bullets
             )
 
-        # 3. SMART ROUTING (pick best model for this task type)
+        # 3. SMART ROUTING (pick best provider/model for this task)
+        chosen_provider = None
         if model is None:
             try:
                 avail = self.available_providers()
@@ -230,6 +231,8 @@ class MOROAI:
                 routing = task_router.analyze(prompt, available)
                 if routing.get("model"):
                     model = routing["model"]
+                if routing.get("provider"):
+                    chosen_provider = routing["provider"]
             except Exception:
                 pass
 
@@ -242,12 +245,26 @@ class MOROAI:
             parts.append(system)
         combined_system = "\n\n".join(parts)
 
-        response = self.registry.call_with_fallback(
-            prompt=prompt,
-            model=model,
-            system=combined_system,
-            temperature=temperature,
-        )
+        # Prefer the router-chosen provider if available
+        response = None
+        if chosen_provider:
+            provider_obj = self.registry.get(chosen_provider)
+            if provider_obj and provider_obj.is_available() and model:
+                response = provider_obj.chat(
+                    prompt=prompt,
+                    model=model,
+                    system=combined_system,
+                    temperature=temperature,
+                )
+
+        # Fallback to full registry chain
+        if response is None or not response.success:
+            response = self.registry.call_with_fallback(
+                prompt=prompt,
+                model=model,
+                system=combined_system,
+                temperature=temperature,
+            )
 
         # 4.5 QUOTA CHECK (after each Ollama Cloud usage)
         if response.provider == "ollama_cloud" and response.success:
