@@ -1,0 +1,18 @@
+{
+  "id": "image_generate-eb725a0c79db",
+  "tool": "image_generate",
+  "args": {
+    "prompt": "قطة صغيرة تلعب بكرة",
+    "width": 1024,
+    "height": 1024
+  },
+  "results": {
+    "success": true,
+    "path": "/data/data/com.termux/files/home/moroai/output/images/img-20261001-053027-66b4b8.jpg",
+    "kind": "image",
+    "error": null
+  },
+  "created_at": "2026-10-01T03:30:31.178918+00:00",
+  "updated_at": "2026-10-01T03:30:31.178918+00:00",
+  "refresh_count": 0
+}

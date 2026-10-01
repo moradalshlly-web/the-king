@@ -1,0 +1,87 @@
+{
+  "id": "stackoverflow_search-c0a84455a098",
+  "tool": "stackoverflow_search",
+  "args": {
+    "query": "python asyncio",
+    "limit": 5
+  },
+  "results": {
+    "success": true,
+    "results": [
+      {
+        "title": "multiprocessing vs multithreading vs asyncio",
+        "url": "https://stackoverflow.com/questions/27435284/multiprocessing-vs-multithreading-vs-asyncio",
+        "score": 399,
+        "answer_count": 13,
+        "is_answered": true,
+        "tags": [
+          "python",
+          "multithreading",
+          "python-3.x",
+          "multiprocessing",
+          "python-asyncio"
+        ],
+        "body_preview": "I found that in Python 3.4, there are few different libraries for multiprocessing/threading: multiprocessing vs threading vs asyncio . But I don't know which one to use or is the recommended one . Do they do the same thing, or are different? If so, which one is used for what? I want to write a progr"
+      },
+      {
+        "title": "How to limit concurrency with Python asyncio?",
+        "url": "https://stackoverflow.com/questions/48483348/how-to-limit-concurrency-with-python-asyncio",
+        "score": 160,
+        "answer_count": 11,
+        "is_answered": true,
+        "tags": [
+          "python",
+          "python-3.x",
+          "asynchronous",
+          "concurrency",
+          "python-asyncio"
+        ],
+        "body_preview": "Let's assume we have a bunch of links to download and each of the link may take a different amount of time to download. And I'm allowed to download using utmost 3 connections only. Now, I want to ensure that I do this efficiently using asyncio. Here's what I'm trying to achieve: At any point in time"
+      },
+      {
+        "title": "How to combine python asyncio with threads?",
+        "url": "https://stackoverflow.com/questions/28492103/how-to-combine-python-asyncio-with-threads",
+        "score": 89,
+        "answer_count": 4,
+        "is_answered": true,
+        "tags": [
+          "python",
+          "multithreading",
+          "python-asyncio",
+          "aiohttp"
+        ],
+        "body_preview": "I have successfully built a RESTful microservice with Python asyncio and aiohttp that listens to a POST event to collect realtime events from various feeders. It then builds an in-memory structure to cache the last 24h of events in a nested defaultdict/deque structure. Now I would like to periodical"
+      },
+      {
+        "title": "How to measure python-asyncio in python3.7",
+        "url": "https://stackoverflow.com/questions/55448865/how-to-measure-python-asyncio-in-python3-7",
+        "score": 2,
+        "answer_count": 1,
+        "is_answered": false,
+        "tags": [
+          "python",
+          "performance-testing",
+          "python-asyncio",
+          "python-3.7"
+        ],
+        "body_preview": "I want to caculate python asyncio performance and select only cpu time cost. I have read how-to-measure-pythons-asyncio-code-performance . But asyncio.Task._step was changed to private which wrote into c modules import asyncio print(asyncio.Task) # _asyncio.Task print(dir(asyncio.Task)) ['__await__'"
+      },
+      {
+        "title": "Python asyncio sleep forever",
+        "url": "https://stackoverflow.com/questions/75844912/python-asyncio-sleep-forever",
+        "score": 2,
+        "answer_count": 1,
+        "is_answered": true,
+        "tags": [
+          "python",
+          "python-asyncio"
+        ],
+        "body_preview": "In some test code I simulate a request handler coroutine that never returns a response. Below works by calling sleep with a sufficiently large value, but a better choice would be something like await asyncio.sleep_forever() . Is there anything built into python asyncio that can do this? async def la"
+      }
+    ],
+    "kind": "stack"
+  },
+  "created_at": "2026-10-01T02:29:26.007987+00:00",
+  "updated_at": "2026-10-01T02:29:26.007987+00:00",
+  "refresh_count": 0
+}

@@ -1,0 +1,17 @@
+{
+  "id": "text_to_speech-caf81c11d159",
+  "tool": "text_to_speech",
+  "args": {
+    "text": "بصوت: أهلاً بك في مورو"
+  },
+  "results": {
+    "success": true,
+    "path": "/data/data/com.termux/files/home/moroai/output/hakim/hakim-Nadia-20261001-090219-b8baa3.mp3",
+    "kind": "speech",
+    "engine": "hakim",
+    "error": null
+  },
+  "created_at": "2026-10-01T07:02:20.504803+00:00",
+  "updated_at": "2026-10-01T07:02:20.504803+00:00",
+  "refresh_count": 0
+}
