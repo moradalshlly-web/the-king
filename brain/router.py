@@ -56,13 +56,38 @@ PREFERENCES = {
 
 
 MODEL_PREFERENCES = {
-    "arabic":    {"ollama_cloud": "gemma4:31b", "ollama": "qwen2.5:7b", "groq": "qwen/qwen3.8-27b"},
-    "code":      {"ollama_cloud": "gpt-oss:120b", "groq": "qwen/qwen3.8-27b", "ollama": "qwen2.5:7b"},
-    "reasoning": {"ollama_cloud": "glm-4.7", "gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
-    "story":     {"ollama_cloud": "gemma4:31b", "gemini": "gemini-3.8-flash", "groq": "qwen/qwen3.8-27b"},
-    "translate": {"ollama_cloud": "gemma4:31b", "gemini": "gemini-3.8-flash"},
-    "quick":     {"groq": "llama-3.1-8b-instant"},
-    "general":   {},
+    "arabic": {
+        "ollama_cloud": "gemma4:31b-cloud",
+        "ollama": "qwen2.5:7b",
+        "groq": "qwen/qwen3.8-27b",
+        "gemini": "gemini-3.8-flash",
+    },
+    "code": {
+        "ollama_cloud": "minimax-m2.5:cloud",
+        "groq": "qwen/qwen3.8-27b",
+        "ollama": "qwen2.5:7b",
+    },
+    "reasoning": {
+        "ollama_cloud": "deepseek-v4-flash:cloud",
+        "gemini": "gemini-3.8-flash",
+        "groq": "qwen/qwen3.8-27b",
+    },
+    "story": {
+        "ollama_cloud": "mistral-large-3:675b-cloud",
+        "gemini": "gemini-3.8-flash",
+        "groq": "qwen/qwen3.8-27b",
+    },
+    "translate": {
+        "ollama_cloud": "gemma4:31b-cloud",
+        "gemini": "gemini-3.8-flash",
+    },
+    "quick": {
+        "ollama_cloud": "ministral-3:8b-cloud",
+        "groq": "llama-3.1-8b-instant",
+    },
+    "general": {
+        "ollama_cloud": "qwen3.5:cloud",
+    },
 }
 
 
