@@ -45,6 +45,15 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "image_generate": [
+        r"ارسم\s+",
+        r"ولد\s+صورة",
+        r"أنشئ\s+صورة",
+        r"انشئ\s+صورة",
+        r"generate\s+image",
+        r"draw\s+",
+        r"create\s+image",
+    ],
     "wikipedia_search": [
         r"ابحث\s+في\s+ويكيبيديا",
         r"ابحث\s+في\s+wikipedia",
@@ -126,6 +135,14 @@ def _extract_query(msg: str) -> str:
         "ابحث في جيت هاب عن ",
         "ابحث في stackoverflow عن ",
         "ابحث في ستاك عن ",
+        "ارسم لي ",
+        "ارسم ",
+        "ولد لي صورة ",
+        "أنشئ صورة ",
+        "انشئ صورة ",
+        "generate image of ",
+        "draw ",
+        "create image of ",
         "ابحث في ويكيبيديا عن ",
         "ابحث في wikipedia عن ",
         "search wikipedia for ",
@@ -217,6 +234,8 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "stackoverflow_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "wikipedia_search":
                     return {"tool": "wikipedia_search", "args": {"query": query, "limit": 5}}
+                if tool_name == "image_generate":
+                    return {"tool": "image_generate", "args": {"prompt": query, "width": 1024, "height": 1024}}
                 if tool_name == "read_file":
                     return {"tool": "read_file", "args": {"path": query}}
                 if tool_name == "list_dir":
@@ -304,6 +323,20 @@ def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
             results = search_wikipedia(args["query"], limit=args.get("limit", 5))
             return {"success": True, "results": results, "kind": "wiki"}
 
+        if tool == "image_generate":
+            from tools.pollinations import generate_image
+            r = generate_image(
+                args.get("prompt", ""),
+                width=args.get("width", 1024),
+                height=args.get("height", 1024),
+            )
+            return {
+                "success": r.get("success", False),
+                "path": r.get("path"),
+                "kind": "image",
+                "error": r.get("error"),
+            }
+
         if tool == "read_file":
             from tools.file_ops import FileOps
             fops = FileOps()
@@ -345,6 +378,11 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
         return "\n".join(lines)
+
+    if kind == "image":
+        if not result.get("success"):
+            return f"[فشل توليد الصورة] {result.get('error', 'unknown')}"
+        return f"[صورة تم توليدها]\n{result.get('path','')}"
 
     if kind == "wiki":
         lines = ["[نتائج ويكيبيديا]"]

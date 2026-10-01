@@ -48,6 +48,7 @@ def register_default_tools() -> None:
     from tools.github import search_repos
     from tools.stack_exchange import search_stackexchange
     from tools.wikipedia import search_wikipedia, get_summary
+    from tools.pollinations import generate_image
 
     fops = FileOps()
     sops = ShellOps()
@@ -148,6 +149,14 @@ def register_default_tools() -> None:
             "success": True,
             "result": _format_wiki(search_wikipedia(query, lang=lang, limit=int(limit))),
         },
+    )
+
+    # image_generate
+    TR.register(
+        name="image_generate",
+        description="Generate an image from a text description (free, no API key).",
+        params='prompt="<text>" width=1024 height=1024 model="flux"',
+        func=lambda prompt, width=1024, height=1024, model="flux": _do_image(prompt, width, height, model),
     )
 
     _registered = True
