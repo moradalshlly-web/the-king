@@ -47,6 +47,7 @@ def register_default_tools() -> None:
     from tools.youtube import search_youtube
     from tools.github import search_repos
     from tools.stack_exchange import search_stackexchange
+    from tools.wikipedia import search_wikipedia, get_summary
 
     fops = FileOps()
     sops = ShellOps()
@@ -135,6 +136,17 @@ def register_default_tools() -> None:
         func=lambda query, limit=5: {
             "success": True,
             "result": _format_stack(search_stackexchange(query, limit=int(limit))),
+        },
+    )
+
+    # wikipedia_search
+    TR.register(
+        name="wikipedia_search",
+        description="Search Wikipedia in Arabic or English for knowledge.",
+        params='query="<text>" lang="ar" limit=5',
+        func=lambda query, lang="ar", limit=5: {
+            "success": True,
+            "result": _format_wiki(search_wikipedia(query, lang=lang, limit=int(limit))),
         },
     )
 

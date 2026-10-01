@@ -45,6 +45,12 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "wikipedia_search": [
+        r"ابحث\s+في\s+ويكيبيديا",
+        r"ابحث\s+في\s+wikipedia",
+        r"\bwikipedia\s+search\b",
+        r"ويكيبيديا\s+عن",
+    ],
     "stackoverflow_search": [
         r"ابحث\s+في\s+stackoverflow",
         r"ابحث\s+في\s+ستاك",
@@ -120,6 +126,9 @@ def _extract_query(msg: str) -> str:
         "ابحث في جيت هاب عن ",
         "ابحث في stackoverflow عن ",
         "ابحث في ستاك عن ",
+        "ابحث في ويكيبيديا عن ",
+        "ابحث في wikipedia عن ",
+        "search wikipedia for ",
         "search stackoverflow for ",
         "search github for ",
         "search web for ",
@@ -206,6 +215,8 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "github_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "stackoverflow_search":
                     return {"tool": "stackoverflow_search", "args": {"query": query, "limit": 5}}
+                if tool_name == "wikipedia_search":
+                    return {"tool": "wikipedia_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "read_file":
                     return {"tool": "read_file", "args": {"path": query}}
                 if tool_name == "list_dir":
@@ -288,6 +299,11 @@ def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
             results = search_stackexchange(args["query"], limit=args.get("limit", 5))
             return {"success": True, "results": results, "kind": "stack"}
 
+        if tool == "wikipedia_search":
+            from tools.wikipedia import search_wikipedia
+            results = search_wikipedia(args["query"], limit=args.get("limit", 5))
+            return {"success": True, "results": results, "kind": "wiki"}
+
         if tool == "read_file":
             from tools.file_ops import FileOps
             fops = FileOps()
@@ -328,6 +344,17 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"{i}. {r.get('title','')}")
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
+        return "\n".join(lines)
+
+    if kind == "wiki":
+        lines = ["[نتائج ويكيبيديا]"]
+        for i, r in enumerate(result.get("results", [])[:5], 1):
+            if "error" in r:
+                continue
+            lines.append(f"{i}. {r.get('title','')}")
+            if r.get('snippet'):
+                lines.append(f"   {r['snippet'][:150]}")
+            lines.append(f"   {r.get('url','')}")
         return "\n".join(lines)
 
     if kind == "stack":
