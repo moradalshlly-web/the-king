@@ -46,8 +46,8 @@ def detect_task_type(message: str) -> str:
 
 PREFERENCES = {
     "arabic":    ["nvidia", "ollama_cloud", "gemini", "groq", "ollama"],
-    "code":      ["nvidia", "ollama_cloud", "groq", "openrouter", "ollama"],
-    "reasoning": ["nvidia", "ollama_cloud", "gemini", "groq"],
+    "code":      ["nvidia", "mistral", "ollama_cloud", "groq", "openrouter", "ollama"],
+    "reasoning": ["nvidia", "mistral", "ollama_cloud", "gemini", "groq"],
     "story":     ["nvidia", "ollama_cloud", "gemini", "groq"],
     "translate": ["nvidia", "ollama_cloud", "gemini", "groq"],
     "quick":     ["groq", "nvidia", "ollama_cloud", "gemini"],
@@ -65,12 +65,14 @@ MODEL_PREFERENCES = {
     },
     "code": {
         "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
+        "mistral": "codestral-latest",
         "ollama_cloud": "gpt-oss:120b-cloud",
         "groq": "qwen/qwen3.8-27b",
         "ollama": "qwen2.5:7b",
     },
     "reasoning": {
         "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
+        "mistral": "mistral-large-latest",
         "ollama_cloud": "nemotron-3-super:cloud",
         "gemini": "gemini-3.8-flash",
         "groq": "qwen/qwen3.8-27b",
