@@ -43,6 +43,38 @@ from tools.reddit import search_reddit
 from tools.web_search import search_web
 from tools.youtube import search_youtube
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time as _time
+
+
+def _search_all_parallel(query, web_limit=5, yt_limit=3, reddit_limit=3):
+    """
+    Run 3 searches concurrently. Returns dict with timing.
+    """
+    started = _time.time()
+    results = {"web": [], "youtube": [], "reddit": [], "errors": {}}
+
+    def _web():
+        return ("web", search_web(query, limit=web_limit))
+
+    def _yt():
+        return ("youtube", search_youtube(query, limit=yt_limit))
+
+    def _rd():
+        return ("reddit", search_reddit(query, limit=reddit_limit))
+
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        futures = [ex.submit(_web), ex.submit(_yt), ex.submit(_rd)]
+        for fut in as_completed(futures):
+            try:
+                key, value = fut.result()
+                results[key] = value
+            except Exception as e:
+                results["errors"][str(e)] = str(e)
+
+    results["elapsed"] = round(_time.time() - started, 2)
+    return results
+
 
 # ============================================================
 # ANSI Colors
@@ -528,51 +560,49 @@ def main():
                     print(f"Tools: {c(state, GREEN if tools_enabled else YELLOW)}")
                     print("Usage: /tools on|off")
 
-            # Search (3 sources)
+            # Search (3 sources, parallel)
             elif cmd == "/search":
                 if not args:
                     print(c("Usage: /search <query>", YELLOW))
                 else:
-                    print(c(f"Searching: {args}", YELLOW))
-                    # Web
+                    print(c(f"Searching (parallel): {args}", DIM))
+                    r = _search_all_parallel(args)
+
+                    # ── WEB ──
                     print()
                     print(c("── WEB ──", BOLD))
-                    try:
-                        wres = search_web(args, limit=5)
-                        if not wres or wres[0].get("title") == "ERROR":
-                            print(c("  (no web results)", DIM))
-                        else:
-                            for i, r in enumerate(wres, 1):
-                                print(f"  {c(str(i), CYAN)}. {r['title'][:80]}")
-                                print(c(f"     {r['url']}", DIM))
-                    except Exception as e:
-                        print(c(f"  (error: {e})", DIM))
-                    # YouTube
+                    wres = r.get("web") or []
+                    if not wres or (wres and wres[0].get("title") == "ERROR"):
+                        print(c("  (no web results)", DIM))
+                    else:
+                        for i, item in enumerate(wres, 1):
+                            print(f"  {c(str(i), CYAN)}. {item['title'][:80]}")
+                            print(c(f"     {item['url']}", DIM))
+
+                    # ── YOUTUBE ──
                     print()
                     print(c("── YOUTUBE ──", BOLD))
-                    try:
-                        yres = search_youtube(args, limit=3)
-                        if not yres or yres[0].get("title") == "ERROR":
-                            print(c("  (no youtube results)", DIM))
-                        else:
-                            for i, r in enumerate(yres, 1):
-                                print(f"  {c(str(i), CYAN)}. {r['title'][:80]}")
-                                print(c(f"     {r['url']}  ({r.get('channel','?')})", DIM))
-                    except Exception as e:
-                        print(c(f"  (error: {e})", DIM))
-                    # Reddit
+                    yres = r.get("youtube") or []
+                    if not yres or (yres and yres[0].get("title") == "ERROR"):
+                        print(c("  (no youtube results)", DIM))
+                    else:
+                        for i, item in enumerate(yres, 1):
+                            print(f"  {c(str(i), CYAN)}. {item['title'][:80]}")
+                            print(c(f"     {item['url']}  ({item.get('channel','?')})", DIM))
+
+                    # ── REDDIT ──
                     print()
                     print(c("── REDDIT ──", BOLD))
-                    try:
-                        rres = search_reddit(args, limit=3)
-                        if not rres:
-                            print(c("  (no reddit results)", DIM))
-                        else:
-                            for i, r in enumerate(rres, 1):
-                                print(f"  {c(str(i), CYAN)}. r/{r['subreddit']}: {r['title'][:70]}")
-                                print(c(f"     {r['url']}", DIM))
-                    except Exception as e:
-                        print(c(f"  (error: {e})", DIM))
+                    rres = r.get("reddit") or []
+                    if not rres:
+                        print(c("  (no reddit results)", DIM))
+                    else:
+                        for i, item in enumerate(rres, 1):
+                            print(f"  {c(str(i), CYAN)}. r/{item['subreddit']}: {item['title'][:70]}")
+                            print(c(f"     {item['url']}", DIM))
+
+                    print()
+                    print(c(f"⏱️  تم البحث في {r.get('elapsed', '?')} ثانية (بالتوازي)", DIM))
 
             # List files
             elif cmd == "/ls":
