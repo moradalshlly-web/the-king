@@ -45,47 +45,53 @@ def detect_task_type(message: str) -> str:
 
 
 PREFERENCES = {
-    "arabic":    ["falcon", "ollama_cloud", "gemini", "groq", "ollama"],
-    "code":      ["ollama_cloud", "deepseek", "groq", "openrouter", "ollama"],
-    "reasoning": ["ollama_cloud", "kimi", "glm", "gemini", "groq"],
-    "story":     ["ollama_cloud", "kimi", "gemini", "groq"],
-    "translate": ["ollama_cloud", "aya", "gemini", "groq"],
-    "quick":     ["groq", "cerebras", "gemini"],
-    "general":   ["groq", "ollama_cloud", "gemini", "openrouter", "ollama"],
+    "arabic":    ["nvidia", "ollama_cloud", "gemini", "groq", "ollama"],
+    "code":      ["nvidia", "ollama_cloud", "groq", "openrouter", "ollama"],
+    "reasoning": ["nvidia", "ollama_cloud", "gemini", "groq"],
+    "story":     ["nvidia", "ollama_cloud", "gemini", "groq"],
+    "translate": ["nvidia", "ollama_cloud", "gemini", "groq"],
+    "quick":     ["groq", "nvidia", "ollama_cloud", "gemini"],
+    "general":   ["groq", "nvidia", "ollama_cloud", "gemini"],
 }
 
 
 MODEL_PREFERENCES = {
     "arabic": {
+        "nvidia": "google/gemma-4-31b-it",
         "ollama_cloud": "gemma4:31b-cloud",
         "ollama": "qwen2.5:7b",
         "groq": "qwen/qwen3.8-27b",
         "gemini": "gemini-3.8-flash",
     },
     "code": {
+        "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
         "ollama_cloud": "gpt-oss:120b-cloud",
         "groq": "qwen/qwen3.8-27b",
         "ollama": "qwen2.5:7b",
     },
     "reasoning": {
+        "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
         "ollama_cloud": "nemotron-3-super:cloud",
         "gemini": "gemini-3.8-flash",
         "groq": "qwen/qwen3.8-27b",
     },
     "story": {
+        "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
         "ollama_cloud": "nemotron-3-super:cloud",
         "gemini": "gemini-3.8-flash",
-        "groq": "qwen/qwen3.8-27b",
     },
     "translate": {
+        "nvidia": "nvidia/riva-translate-4b-instruct-v2",
         "ollama_cloud": "gemma4:31b-cloud",
         "gemini": "gemini-3.8-flash",
     },
     "quick": {
+        "nvidia": "openai/gpt-oss-20b",
         "ollama_cloud": "gpt-oss:20b-cloud",
         "groq": "llama-3.1-8b-instant",
     },
     "general": {
+        "nvidia": "z-ai/glm-5.3-flash",
         "ollama_cloud": "gpt-oss:20b-cloud",
     },
 }
@@ -116,7 +122,7 @@ def analyze(message, available):
 
 
 if __name__ == "__main__":
-    available = ["groq", "gemini", "ollama_cloud", "openrouter", "ollama"]
+    available = ["groq", "gemini", "nvidia", "ollama_cloud", "openrouter", "ollama"]
     tests = [
         "اكتب لي دالة بايثون",
         "حلل لي هذه الرواية",
