@@ -46,6 +46,7 @@ def register_default_tools() -> None:
     from tools.web_search import search_web
     from tools.youtube import search_youtube
     from tools.github import search_repos
+    from tools.stack_exchange import search_stackexchange
 
     fops = FileOps()
     sops = ShellOps()
@@ -123,6 +124,17 @@ def register_default_tools() -> None:
         func=lambda query, limit=5: {
             "success": True,
             "result": _format_github(search_repos(query, int(limit))),
+        },
+    )
+
+    # stackoverflow_search
+    TR.register(
+        name="stackoverflow_search",
+        description="Search Stack Overflow for programming questions and answers.",
+        params='query="<text>" limit=5',
+        func=lambda query, limit=5: {
+            "success": True,
+            "result": _format_stack(search_stackexchange(query, limit=int(limit))),
         },
     )
 

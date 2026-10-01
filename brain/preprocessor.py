@@ -45,6 +45,14 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "stackoverflow_search": [
+        r"ابحث\s+في\s+stackoverflow",
+        r"ابحث\s+في\s+ستاك",
+        r"ابحث\s+في\s+stack\s+overflow",
+        r"\bstackoverflow\s+search\b",
+        r"سؤال\s+برمجي",
+        r"حل\s+برمجي",
+    ],
     "github_search": [
         r"ابحث\s+في\s+github",
         r"ابحث\s+في\s+جيتهاب",
@@ -110,6 +118,9 @@ def _extract_query(msg: str) -> str:
         "ابحث في github عن ",
         "ابحث في جيتهاب عن ",
         "ابحث في جيت هاب عن ",
+        "ابحث في stackoverflow عن ",
+        "ابحث في ستاك عن ",
+        "search stackoverflow for ",
         "search github for ",
         "search web for ",
         "google ",
@@ -193,6 +204,8 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "search_reddit", "args": {"query": query, "limit": 3}}
                 if tool_name == "github_search":
                     return {"tool": "github_search", "args": {"query": query, "limit": 5}}
+                if tool_name == "stackoverflow_search":
+                    return {"tool": "stackoverflow_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "read_file":
                     return {"tool": "read_file", "args": {"path": query}}
                 if tool_name == "list_dir":
@@ -270,6 +283,11 @@ def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
             results = search_repos(args["query"], limit=args.get("limit", 5))
             return {"success": True, "results": results, "kind": "github"}
 
+        if tool == "stackoverflow_search":
+            from tools.stack_exchange import search_stackexchange
+            results = search_stackexchange(args["query"], limit=args.get("limit", 5))
+            return {"success": True, "results": results, "kind": "stack"}
+
         if tool == "read_file":
             from tools.file_ops import FileOps
             fops = FileOps()
@@ -310,6 +328,17 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"{i}. {r.get('title','')}")
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
+        return "\n".join(lines)
+
+    if kind == "stack":
+        lines = ["[نتائج Stack Overflow]"]
+        for i, r in enumerate(result.get("results", [])[:5], 1):
+            if "error" in r:
+                continue
+            lines.append(f"{i}. {r.get('title','')}")
+            lines.append(f"   Score: {r.get('score',0)}  Answers: {r.get('answer_count',0)}")
+            lines.append(f"   Tags: {', '.join(r.get('tags',[])[:5])}")
+            lines.append(f"   {r.get('url','')}")
         return "\n".join(lines)
 
     if kind == "github":
