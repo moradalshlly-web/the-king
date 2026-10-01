@@ -78,6 +78,20 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
         "base_url": "https://integrate.api.nvidia.com/v1/chat/completions",
         "capabilities": ["chat", "code"],
     },
+    "mistral": {
+        "priority": 3,
+        "models": [
+            "mistral-large-latest",
+            "mistral-medium-latest",
+            "codestral-latest",
+            "mistral-small-latest",
+        ],
+        "daily_limit": 0,
+        "rpm_limit": 60,
+        "api_key_env": "MISTRAL_API_KEY",
+        "base_url": "https://api.mistral.ai/v1/chat/completions",
+        "capabilities": ["chat", "code"],
+    },
     "gemini": {
         "priority": 3,
         "models": ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite"],

@@ -41,6 +41,7 @@ from providers.openrouter import OpenRouterProvider
 from providers.ollama import OllamaProvider
 from providers.ollama_cloud import OllamaCloudProvider
 from providers.nvidia import NvidiaProvider
+from providers.mistral import MistralProvider
 from providers.base import AIResponse
 from brain.identity import load_identity
 
@@ -140,6 +141,10 @@ class MOROAI:
             pass
         try:
             self.registry.register("nvidia", NvidiaProvider())
+        except Exception:
+            pass
+        try:
+            self.registry.register("mistral", MistralProvider())
         except Exception:
             pass
 
