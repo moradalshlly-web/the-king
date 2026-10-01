@@ -64,6 +64,20 @@ FREE_PROVIDER_DEFAULTS: Dict[str, dict] = {
         "base_url": "https://ollama.com/api/chat",
         "capabilities": ["chat", "code"],
     },
+    "nvidia": {
+        "priority": 2,
+        "models": [
+            "nvidia/nemotron-3-ultra-550b-a55b",
+            "nvidia/nemotron-3-super-120b-a12b",
+            "openai/gpt-oss-20b",
+            "nvidia/riva-translate-4b-instruct-v2",
+        ],
+        "daily_limit": 0,
+        "rpm_limit": 40,
+        "api_key_env": "NVIDIA_API_KEY",
+        "base_url": "https://integrate.api.nvidia.com/v1/chat/completions",
+        "capabilities": ["chat", "code"],
+    },
     "gemini": {
         "priority": 3,
         "models": ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite"],
