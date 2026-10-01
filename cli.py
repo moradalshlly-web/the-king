@@ -237,6 +237,13 @@ def main():
     evolve_engine = EvolveEngine(brain)
     session_lifecycle = SessionLifecycle()
 
+    # Start cloud sync watcher in background
+    try:
+        from tools.sync_cloud import start_watcher
+        start_watcher()
+    except Exception:
+        pass
+
     # State
     content_class = "standard"
     tools_enabled = True
@@ -309,6 +316,17 @@ def main():
                 elapsed = datetime.now() - started_at
                 mins = int(elapsed.total_seconds() // 60)
                 print(c(f"⏱️ Session duration: {mins} min", DIM))
+
+                # Flush cloud sync before exit
+                try:
+                    from tools.sync_cloud import on_shutdown
+                    print(c("☁️  جاري رفع التحديثات إلى السحابة...", DIM))
+                    r = on_shutdown()
+                    if r.get("flushed"):
+                        print(c(f"✅ تم رفع {r['flushed']} ملفاً", GREEN))
+                except Exception:
+                    pass
+
                 print(c("Goodbye. 👋", CYAN))
                 return 0
 
@@ -627,6 +645,37 @@ def main():
                             r = builder.write(target, content)
                             if r["success"]:
                                 print(c(f"✅ Written: {r['path']} ({r['bytes_written']} bytes)", GREEN))
+
+                                # Run repair loop with verifier
+                                try:
+                                    from brain.repair_loop import repair_file
+
+                                    def on_attempt(attempt, v):
+                                        if attempt == 0:
+                                            if not v.get("passed"):
+                                                print(c("🔍 المدقق: ⚠️  ملف يحتاج إصلاحاً", YELLOW))
+                                        else:
+                                            if v.get("passed"):
+                                                print(c(f"🔧 محاولة {attempt}: ✅ نجح", GREEN))
+                                            else:
+                                                print(c(f"🔧 محاولة {attempt}: ❌ لا زال معطوباً", YELLOW))
+
+                                    result = repair_file(
+                                        brain, target,
+                                        original_prompt=desc,
+                                        max_attempts=3,
+                                        on_attempt=on_attempt,
+                                    )
+
+                                    if result.get("success"):
+                                        if result.get("attempts", 0) > 0:
+                                            print(c(f"✅ تم الإصلاح في {result['attempts']} محاولة", GREEN))
+                                        else:
+                                            print(c(f"✅ الملف سليم مباشرة (score={result['final_score']})", GREEN))
+                                    else:
+                                        print(c(f"⚠️  لم يُصلح بعد 3 محاولات — score={result['final_score']}", YELLOW))
+                                except Exception as e:
+                                    print(c(f"⚠️  المدقق: {e}", DIM))
                             else:
                                 print(c(f"❌ Write failed: {r['error']}", RED))
 
@@ -664,6 +713,30 @@ def main():
                                 r = evolve_engine.file_ops.write_file(plan["target_file"], content)
                                 if r.get("success"):
                                     print(c(f"✅ Written: {r['path']}", GREEN))
+
+                                    # Repair loop
+                                    try:
+                                        from brain.repair_loop import repair_file
+
+                                        def on_attempt(attempt, v):
+                                            if attempt == 0 and not v.get("passed"):
+                                                print(c("🔍 المدقق: يحتاج إصلاحاً", YELLOW))
+                                            elif attempt > 0:
+                                                mark = "✅" if v.get("passed") else "❌"
+                                                print(c(f"🔧 محاولة {attempt}: {mark}", YELLOW))
+
+                                        result = repair_file(
+                                            brain, plan["target_file"],
+                                            original_prompt=plan.get("description", ""),
+                                            max_attempts=3,
+                                            on_attempt=on_attempt,
+                                        )
+                                        if result.get("success"):
+                                            print(c(f"✅ الملف سليم (score={result['final_score']})", GREEN))
+                                        else:
+                                            print(c(f"⚠️  فشل الإصلاح بعد {result['attempts']} محاولات", YELLOW))
+                                    except Exception as e:
+                                        print(c(f"⚠️  المدقق: {e}", DIM))
                                 else:
                                     print(c(f"❌ {r.get('error')}", RED))
 

@@ -33,3 +33,11 @@ memory/data/
 # ─── Large files (kept on Hugging Face) ───
 web_new/vendor/
 web_new/images/
+
+# ─── Local backups (never push) ───
+*_old_backup*.py
+*_old_backup*.json
+diagnose_offline.py
+memory/cloud/test_sync.md
+memory/cloud/_test_*
+memory/cloud/_final_*

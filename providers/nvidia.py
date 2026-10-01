@@ -118,7 +118,7 @@ class NvidiaProvider(BaseProvider):
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            with urllib.request.urlopen(req, timeout=25) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
 
             text = ""

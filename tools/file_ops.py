@@ -85,7 +85,33 @@ class FileOps:
         try:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(content, encoding="utf-8")
-            return {"success": True, "path": str(p), "bytes_written": len(content.encode("utf-8")), "error": None}
+            try:
+                from tools.sync_cloud import notify_change
+                notify_change(str(p))
+            except Exception:
+                pass
+
+            # Run deterministic verifier (only for small/quick checks)
+            verification = None
+            try:
+                from tools.deterministic_verifier import verify_file
+                verification = verify_file(str(p), save=True)
+            except Exception:
+                pass
+
+            result = {
+                "success": True,
+                "path": str(p),
+                "bytes_written": len(content.encode("utf-8")),
+                "error": None,
+            }
+            if verification:
+                result["verification"] = {
+                    "passed": verification.get("passed"),
+                    "score": verification.get("score"),
+                    "failed": verification.get("failed_checks", []),
+                }
+            return result
         except Exception as e:
             return {"success": False, "path": str(p), "bytes_written": 0, "error": str(e)}
 
@@ -100,6 +126,11 @@ class FileOps:
             p.parent.mkdir(parents=True, exist_ok=True)
             with p.open("a", encoding="utf-8") as f:
                 f.write(content)
+            try:
+                from tools.sync_cloud import notify_change
+                notify_change(str(p))
+            except Exception:
+                pass
             return {"success": True, "path": str(p), "bytes_written": len(content.encode("utf-8")), "error": None}
         except Exception as e:
             return {"success": False, "path": str(p), "bytes_written": 0, "error": str(e)}

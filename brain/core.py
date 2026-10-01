@@ -26,6 +26,8 @@ from typing import Optional, Dict, Any
 from brain.core_paths import PROJECT_ROOT
 from brain import prime_directives as PD
 from brain import router as task_router
+from brain import router_v2
+from brain import provider_scorer
 from brain import owner_profile as OP
 from brain import quota_monitor
 
@@ -232,13 +234,19 @@ class MOROAI:
                 + bullets
             )
 
-        # 3. SMART ROUTING (pick best provider/model for this task)
+        # 3. SMART ROUTING v2 (metrics-based, with legacy fallback)
         chosen_provider = None
+        task_type = "general"
+        try:
+            task_type = task_router.detect_task_type(prompt)
+        except Exception:
+            pass
         if model is None:
             try:
                 avail = self.available_providers()
                 available = [n for n, info in avail.items() if info.get("is_available")]
-                routing = task_router.analyze(prompt, available)
+                routing = router_v2.analyze(prompt, available)
+                task_type = routing.get("task_type", task_type)
                 if routing.get("model"):
                     model = routing["model"]
                 if routing.get("provider"):
@@ -275,6 +283,20 @@ class MOROAI:
                 system=combined_system,
                 temperature=temperature,
             )
+
+        # 4.7 RECORD METRICS (feeds router_v2 for future decisions)
+        try:
+            if chosen_provider and response.provider != chosen_provider:
+                provider_scorer.record_failure(chosen_provider, task_type)
+            if response.success and response.provider and response.provider not in ("core", "registry"):
+                provider_scorer.record_success(
+                    response.provider, task_type,
+                    latency_ms=response.latency_ms or 0,
+                )
+            elif not response.success and response.provider not in ("core", "registry"):
+                provider_scorer.record_failure(response.provider, task_type)
+        except Exception:
+            pass
 
         # 4.5 QUOTA CHECK (after each Ollama Cloud usage)
         if response.provider == "ollama_cloud" and response.success:

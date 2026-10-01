@@ -407,6 +407,19 @@ def run_with_tools(
 
         # Execute
         result = TR.execute_tool(call["name"], call["args"])
+
+        # Surface verification results to the LLM and user
+        if isinstance(result, dict) and result.get("verification"):
+            v = result["verification"]
+            if not v.get("passed"):
+                failed = ", ".join(v.get("failed", []))
+                print(f"⚠️  تحذير المدقق: {failed}")
+                # Add note to the tool result shown to the LLM
+                if "content" in result and isinstance(result["content"], str):
+                    result["content"] = (
+                        "[تحذير المدقق: " + failed + "]\n" + result["content"]
+                    )
+
         formatted = TR.format_result(result)
 
         if verbose:

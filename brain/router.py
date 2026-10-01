@@ -34,6 +34,19 @@ def detect_task_type(message: str) -> str:
         if kw in msg_lower:
             return "story"
 
+    # Check task patterns FIRST (code/story/translate/reasoning)
+    for task_type, patterns in TASK_PATTERNS.items():
+        if task_type == "quick":
+            continue
+        for pat in patterns:
+            if re.search(pat, msg_lower, re.IGNORECASE):
+                return task_type
+
+    # Then: very short messages -> quick (fast provider)
+    words = msg.split()
+    if len(words) <= 4 and len(msg) < 40:
+        return "quick"
+
     for task_type, patterns in TASK_PATTERNS.items():
         for pat in patterns:
             if re.search(pat, msg_lower, re.IGNORECASE):

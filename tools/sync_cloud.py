@@ -1,30 +1,25 @@
 """
 tools/sync_cloud.py
 ===================
-Automatic cloud sync for MOROAI.
+Fast, automatic cloud sync for MOROAI.
 
-Behavior:
-    - sync_now(path)      : uploads one file to Hugging Face immediately
-    - push_github()       : batches text files into one GitHub commit
-    - retry_pending()     : flushes the pending queue
-    - sync_all()          : scans project and syncs everything
-    - status()            : shows sync state
+Design:
+    - Watcher thread wakes every 30s
+    - Batches queued files into single HF upload_folder calls
+    - Writes to a local queue (durable across restarts)
+    - On reconnect, sends notification and flushes queue
+    - On MOROAI shutdown, flushes and stops
 
-Routing:
-    - Text (code, vision, reports)   -> HF + GitHub
-    - Large files (images, JS, etc.) -> HF only
-    - Private (.env, memory/data/)   -> nowhere
-
-State files:
-    - memory/cloud/sync_state.json  : what has been synced
-    - memory/cloud/pending.json     : failed uploads (retry queue)
+Hooks (call these from MOROAI):
+    notify_change(path)      -> called after any write
+    on_shutdown()            -> called before exit
+    start_watcher()          -> start the background thread
 """
 
 import os
 import json
-import hashlib
-import subprocess
 import time
+import threading
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
@@ -34,17 +29,20 @@ except ImportError:
     PROJECT_ROOT = os.path.expanduser("~/moroai")
 
 
-# ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 # Constants
-# ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 
-STATE_FILE   = os.path.join(PROJECT_ROOT, "memory", "cloud", "sync_state.json")
-PENDING_FILE = os.path.join(PROJECT_ROOT, "memory", "cloud", "pending.json")
-SKILLS_FILE  = os.path.join(PROJECT_ROOT, "memory", "cloud", "skills.json")
-ENV_FILE     = os.path.join(PROJECT_ROOT, ".env")
-HF_REPO_NAME = "moroai-memory"
+QUEUE_FILE       = os.path.join(PROJECT_ROOT, "memory", "cloud", "queue.json")
+STATE_FILE       = os.path.join(PROJECT_ROOT, "memory", "cloud", "sync_state.json")
+NOTIFICATIONS    = os.path.join(PROJECT_ROOT, "memory", "notifications.jsonl")
+ENV_FILE         = os.path.join(PROJECT_ROOT, ".env")
+HF_REPO_NAME     = "moroai-memory"
 
-GITHUB_MAX_SIZE = 100_000       # 100 KB
+WATCH_INTERVAL   = 30         # seconds between flushes
+SMALL_FILE_BYTES = 5_000      # upload immediately if smaller
+IMMEDIATE_EXTS   = {".json", ".md"}
+
 TEXT_EXTS = {
     ".py", ".md", ".txt", ".json", ".yaml", ".yml",
     ".html", ".css", ".js", ".ts", ".sh", ".toml", ".ini",
@@ -52,14 +50,32 @@ TEXT_EXTS = {
 
 PRIVATE_PREFIXES = (
     ".env", ".moroai/", "memory/data/", "node_modules/",
-    "__pycache__/", ".git/", "output/", "memory/cloud/pending.json",
+    "__pycache__/", ".git/", "output/",
+    "memory/cloud/queue.json",
+    "memory/cloud/pending.json",
     "memory/cloud/sync_state.json",
+    "memory/cloud/test_",
+    "memory/vision/_backups/",
 )
 
+# Extensions always skipped
+SKIP_EXTS = {".lock", ".metadata"}
 
-# ───────────────────────────────────────────────────────────
-# Helpers — token / paths
-# ───────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════
+# Internal state (in-memory)
+# ═══════════════════════════════════════════════════════════
+
+_lock           = threading.Lock()
+_queue: Dict[str, float] = {}       # path -> time added
+_stop_flag      = False
+_watcher        = None
+_last_online    = True              # for reconnect notification
+
+
+# ═══════════════════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════════════════
 
 def _read_env(key: str) -> Optional[str]:
     if not os.path.exists(ENV_FILE):
@@ -75,7 +91,6 @@ def _read_env(key: str) -> Optional[str]:
 
 
 def _relative(path: str) -> str:
-    """Convert absolute path to project-relative (POSIX slashes)."""
     if os.path.isabs(path):
         try:
             path = os.path.relpath(path, PROJECT_ROOT)
@@ -85,29 +100,16 @@ def _relative(path: str) -> str:
 
 
 def _full(path: str) -> str:
-    """Absolute path from project-relative."""
     if os.path.isabs(path):
         return path
     return os.path.join(PROJECT_ROOT, path)
 
 
-def _is_private(rel_path: str) -> bool:
-    for prefix in PRIVATE_PREFIXES:
-        if rel_path.startswith(prefix):
-            return True
-    return False
+def _is_private(rel: str) -> bool:
+    return any(rel.startswith(p) for p in PRIVATE_PREFIXES)
 
 
-def _is_text(rel_path: str) -> bool:
-    _, ext = os.path.splitext(rel_path)
-    return ext.lower() in TEXT_EXTS
-
-
-# ───────────────────────────────────────────────────────────
-# State management
-# ───────────────────────────────────────────────────────────
-
-def _load_json(path: str, default: Any) -> Any:
+def _load_json(path: str, default):
     if not os.path.exists(path):
         return default
     try:
@@ -117,67 +119,45 @@ def _load_json(path: str, default: Any) -> Any:
         return default
 
 
-def _save_json(path: str, data: Any) -> None:
+def _save_json(path: str, data) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
     try:
-        with open(tmp, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, path)
     except Exception:
         pass
 
 
-def _load_state() -> Dict[str, Any]:
-    return _load_json(STATE_FILE, {"version": 1, "files": {}, "last_sync": None})
-
-
-def _save_state(state: Dict[str, Any]) -> None:
-    state["last_sync"] = datetime.now().isoformat()
-    _save_json(STATE_FILE, state)
-
-
-def _load_pending() -> Dict[str, Any]:
-    return _load_json(PENDING_FILE, {"version": 1, "queue": []})
-
-
-def _save_pending(pending: Dict[str, Any]) -> None:
-    _save_json(PENDING_FILE, pending)
-
-
-# ───────────────────────────────────────────────────────────
-# Hashing
-# ───────────────────────────────────────────────────────────
-
-def _hash_file(path: str) -> Optional[str]:
+def _notify(message: str, kind: str = "info") -> None:
     try:
-        h = hashlib.sha256()
-        with open(path, "rb") as f:
-            while True:
-                chunk = f.read(65536)
-                if not chunk:
-                    break
-                h.update(chunk)
-        return h.hexdigest()
+        os.makedirs(os.path.dirname(NOTIFICATIONS), exist_ok=True)
+        with open(NOTIFICATIONS, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "time": datetime.now().isoformat(),
+                "kind": kind,
+                "message": message,
+                "read": False,
+            }, ensure_ascii=False) + "\n")
     except Exception:
-        return None
+        pass
 
 
-def _file_info(rel_path: str) -> Optional[Dict[str, Any]]:
-    full = _full(rel_path)
-    if not os.path.isfile(full):
-        return None
-    try:
-        size = os.path.getsize(full)
-        mtime = os.path.getmtime(full)
-    except Exception:
-        return None
-    return {"path": rel_path, "size": size, "mtime": mtime}
+def _queue_load() -> None:
+    global _queue
+    data = _load_json(QUEUE_FILE, {})
+    if isinstance(data, dict):
+        _queue = data
 
 
-# ───────────────────────────────────────────────────────────
+def _queue_save() -> None:
+    with _lock:
+        snapshot = dict(_queue)
+    _save_json(QUEUE_FILE, snapshot)
+
+
+# ═══════════════════════════════════════════════════════════
 # Hugging Face
-# ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 
 def _hf_api():
     try:
@@ -195,308 +175,280 @@ def _hf_api():
         return None, None
 
 
-def _hf_upload(rel_path: str, remote_path: str) -> bool:
-    """Upload one file to HF. Returns True on success."""
+def _remote_prefix(rel: str) -> str:
+    if rel.startswith("web_new/"):
+        return "web"
+    if rel.startswith("memory/workspace/analyzer/"):
+        return "analyzer"
+    if rel.startswith("memory/workspace/isolation/"):
+        return "isolation"
+    if rel.startswith("memory/cloud/"):
+        return "cloud"
+    return "files"
+
+
+# ═══════════════════════════════════════════════════════════
+# Batch upload (fast)
+# ═══════════════════════════════════════════════════════════
+
+def _upload_batch(paths: List[str]) -> Dict[str, bool]:
+    """
+    Upload multiple files. Group by remote prefix.
+    Uses upload_folder for one HTTP call per group.
+    Returns {path: success}.
+    """
     api, repo_id = _hf_api()
     if not api:
-        return False
-    full = _full(rel_path)
-    if not os.path.isfile(full):
-        return False
-    try:
-        api.upload_file(
-            path_or_fileobj=full,
-            path_in_repo=remote_path,
-            repo_id=repo_id,
-            repo_type="dataset",
-            token=api.token,
-        )
+        return {p: False for p in paths}
+
+    result = {}
+    groups: Dict[str, List[str]] = {}
+
+    # Final filter: skip private files even if they slipped through
+    def _keep(r: str) -> bool:
+        if _is_private(r):
+            return False
+        _, ext = os.path.splitext(r)
+        if ext in SKIP_EXTS:
+            return False
         return True
-    except Exception:
-        return False
+
+    paths = [p for p in paths if _keep(p)]
+
+    for rel in paths:
+        groups.setdefault(_remote_prefix(rel), []).append(rel)
+
+    for prefix, files in groups.items():
+        # Build allow_patterns for upload_folder.
+        # For "web" prefix, we need to remap web_new/... -> web/...
+        try:
+            if prefix == "web":
+                # web_new/<sub> -> "web/<sub>"
+                patterns = [rel.replace("web_new/", "", 1) for rel in files]
+                api.upload_folder(
+                    folder_path=os.path.join(PROJECT_ROOT, "web_new"),
+                    path_in_repo="web",
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    token=api.token,
+                    allow_patterns=patterns,
+                )
+            elif prefix == "analyzer":
+                api.upload_folder(
+                    folder_path=os.path.join(PROJECT_ROOT, "memory/workspace/analyzer"),
+                    path_in_repo="analyzer",
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    token=api.token,
+                    ignore_patterns=["*.lock", "*.metadata", ".gitignore"],
+                )
+            elif prefix == "isolation":
+                api.upload_folder(
+                    folder_path=os.path.join(PROJECT_ROOT, "memory/workspace/isolation"),
+                    path_in_repo="isolation",
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    token=api.token,
+                )
+            elif prefix == "cloud":
+                # Upload only the requested files (safer than full folder)
+                for rel in files:
+                    full = _full(rel)
+                    if os.path.isfile(full):
+                        api.upload_file(
+                            path_or_fileobj=full,
+                            path_in_repo="cloud/" + os.path.basename(rel),
+                            repo_id=repo_id,
+                            repo_type="dataset",
+                            token=api.token,
+                        )
+            else:
+                # misc: upload each individually (rare)
+                for rel in files:
+                    full = _full(rel)
+                    api.upload_file(
+                        path_or_fileobj=full,
+                        path_in_repo="files/" + rel,
+                        repo_id=repo_id,
+                        repo_type="dataset",
+                        token=api.token,
+                    )
+
+            for f in files:
+                result[f] = True
+        except Exception:
+            for f in files:
+                result[f] = False
+
+    return result
 
 
-# ───────────────────────────────────────────────────────────
-# GitHub (batched git operations)
-# ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
+# Flush queue (the main worker)
+# ═══════════════════════════════════════════════════════════
 
-def _gh_run(args: List[str]) -> bool:
-    try:
-        r = subprocess.run(
-            ["git"] + args,
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        return r.returncode == 0
-    except Exception:
-        return False
+def _flush() -> Dict[str, Any]:
+    """Take everything from queue and try to upload in one batch."""
+    global _last_online
 
+    with _lock:
+        if not _queue:
+            return {"flushed": 0, "failed": 0}
+        items = list(_queue.keys())
+        _queue.clear()
 
-def _gh_has_changes() -> bool:
-    try:
-        r = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        return bool(r.stdout.strip())
-    except Exception:
-        return False
-
-
-def push_github(message: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Stage all text files (respecting .gitignore), commit, and push.
-    Safe to call anytime. Does nothing if no changes.
-    """
-    if not _gh_has_changes():
-        return {"success": True, "committed": False, "reason": "no changes"}
-
-    if message is None:
-        message = f"Auto-sync: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-
-    if not _gh_run(["add", "-A"]):
-        return {"success": False, "error": "git add failed"}
-
-    if not _gh_run(["commit", "-m", message]):
-        return {"success": True, "committed": False, "reason": "nothing to commit"}
-
-    if not _gh_run(["push", "origin", "main"]):
-        return {"success": False, "error": "git push failed"}
-
-    return {"success": True, "committed": True}
-
-
-# ───────────────────────────────────────────────────────────
-# Pending queue
-# ───────────────────────────────────────────────────────────
-
-def _enqueue_pending(rel_path: str, dest: str) -> None:
-    p = _load_pending()
-    for item in p["queue"]:
-        if item["path"] == rel_path and item["dest"] == dest:
-            return
-    p["queue"].append({
-        "path": rel_path,
-        "dest": dest,
-        "added_at": datetime.now().isoformat(),
-    })
-    _save_pending(p)
-
-
-def retry_pending() -> Dict[str, Any]:
-    """Try to flush the pending queue. Returns summary."""
-    p = _load_pending()
-    if not p["queue"]:
-        return {"success": True, "retried": 0, "cleared": 0}
-
-    api, repo_id = _hf_api()
+    # Detect internet via quick check
+    api, _ = _hf_api()
     if not api:
-        return {"success": False, "error": "HF not configured"}
+        # offline — put back, notify once
+        with _lock:
+            for it in items:
+                _queue[it] = time.time()
+        if _last_online:
+            _notify("⚠️ لا يوجد اتصال — سيُستأنف الرفع لاحقاً", "sync_offline")
+            _last_online = False
+        return {"flushed": 0, "failed": len(items), "offline": True}
 
-    still_pending = []
-    cleared = 0
-    for item in p["queue"]:
-        rel = item["path"]
+    # We're back online
+    if not _last_online:
+        _notify("✅ عاد الاتصال — جاري رفع الملفات المعلّقة", "sync_resumed")
+        _last_online = True
+
+    result = _upload_batch(items)
+    ok = sum(1 for v in result.values() if v)
+    failed = [p for p, v in result.items() if not v]
+
+    if failed:
+        # put failures back
+        with _lock:
+            for it in failed:
+                _queue[it] = time.time()
+
+    _queue_save()
+    return {"flushed": ok, "failed": len(failed)}
+
+
+# ═══════════════════════════════════════════════════════════
+# Public API — called by MOROAI
+# ═══════════════════════════════════════════════════════════
+
+def notify_change(path: str) -> None:
+    """
+    Called after any file write. Does not block. Never raises.
+    Small important files (.json, .md, tiny) are flushed immediately.
+    Others are queued for the next batch (30s max).
+    """
+    try:
+        rel = _relative(path)
+        if _is_private(rel):
+            return
         if not os.path.isfile(_full(rel)):
-            cleared += 1
-            continue
+            return
 
-        remote = "files/" + rel if not rel.startswith("web_new/") \
-                 else "web/" + rel.replace("web_new/", "", 1)
+        size = os.path.getsize(_full(rel))
+        _, ext = os.path.splitext(rel)
 
-        if item["dest"] == "hf" and _hf_upload(rel, remote):
-            cleared += 1
-        else:
-            still_pending.append(item)
+        # Immediate flush for tiny important files
+        if size <= SMALL_FILE_BYTES or ext in IMMEDIATE_EXTS:
+            result = _upload_batch([rel])
+            if result.get(rel):
+                return
+            # failed -> queue for retry
+            with _lock:
+                _queue[rel] = time.time()
+            _queue_save()
+            return
 
-    p["queue"] = still_pending
-    _save_pending(p)
-    return {"success": True, "retried": len(still_pending), "cleared": cleared}
-
-
-# ───────────────────────────────────────────────────────────
-# Public API
-# ───────────────────────────────────────────────────────────
-
-def _remote_path_for(rel_path: str) -> str:
-    """Decide where the file goes inside HF repo."""
-    if rel_path.startswith("web_new/"):
-        return "web/" + rel_path.replace("web_new/", "", 1)
-    if rel_path.startswith("memory/workspace/analyzer/"):
-        return "analyzer/" + os.path.basename(rel_path)
-    if rel_path.startswith("memory/workspace/isolation/"):
-        return "isolation/" + os.path.basename(rel_path)
-    if rel_path.startswith("memory/cloud/"):
-        return "cloud/" + os.path.basename(rel_path)
-    return "files/" + rel_path
+        # Otherwise queue for batch
+        with _lock:
+            _queue[rel] = time.time()
+        _queue_save()
+    except Exception:
+        pass
 
 
-def sync_now(path: str) -> Dict[str, Any]:
-    """
-    Sync a single file to Hugging Face immediately.
-    Fast. Best-effort. Adds to pending on failure.
-
-    Call this after any write.
-    """
-    rel = _relative(path)
-    if _is_private(rel):
-        return {"success": True, "skipped": "private"}
-
-    info = _file_info(rel)
-    if not info:
-        return {"success": False, "error": "file not found"}
-
-    # Load state and check if changed
-    state = _load_state()
-    old = state["files"].get(rel, {})
-    if old.get("size") == info["size"] and old.get("mtime") == info["mtime"]:
-        return {"success": True, "skipped": "unchanged"}
-
-    # Compute hash
-    new_hash = _hash_file(_full(rel))
-
-    # Upload to HF
-    remote = _remote_path_for(rel)
-    ok_hf = _hf_upload(rel, remote)
-
-    # Update state
-    state["files"][rel] = {
-        "hash": new_hash,
-        "size": info["size"],
-        "mtime": info["mtime"],
-        "synced_hf": ok_hf,
-        "synced_at": datetime.now().isoformat(),
-    }
-    _save_state(state)
-
-    if not ok_hf:
-        _enqueue_pending(rel, "hf")
-
-    return {"success": True, "synced_hf": ok_hf, "remote": remote}
+def start_watcher() -> None:
+    """Start the background watcher thread. Idempotent."""
+    global _watcher, _stop_flag
+    if _watcher is not None and _watcher.is_alive():
+        return
+    _queue_load()
+    _stop_flag = False
+    _watcher = threading.Thread(target=_watcher_loop, daemon=True, name="moroai-sync")
+    _watcher.start()
 
 
-def sync_all(text_only: bool = False) -> Dict[str, Any]:
-    """
-    Scan the project and sync every changed file.
-    Use at end of session, or after big operations.
-    """
-    dirs = ["brain", "tools", "providers", "memory", "web_new", "config"]
-    total = 0
-    ok = 0
-    failed = 0
-
-    for d in dirs:
-        base = os.path.join(PROJECT_ROOT, d)
-        if not os.path.isdir(base):
-            continue
-        for dirpath, dirnames, filenames in os.walk(base):
-            dirnames[:] = [
-                x for x in dirnames
-                if x not in ("__pycache__", "node_modules", ".git", "output")
-            ]
-            for fn in filenames:
-                full = os.path.join(dirpath, fn)
-                rel = _relative(full)
-                if _is_private(rel):
-                    continue
-                if text_only and not _is_text(rel):
-                    continue
-                total += 1
-                r = sync_now(rel)
-                if r.get("success"):
-                    ok += 1
-                else:
-                    failed += 1
-
-    return {"success": True, "total": total, "ok": ok, "failed": failed}
+def on_shutdown() -> Dict[str, Any]:
+    """Flush everything and stop the watcher. Call before exit."""
+    global _stop_flag
+    _stop_flag = True
+    result = _flush()
+    try:
+        if _watcher is not None:
+            _watcher.join(timeout=10)
+    except Exception:
+        pass
+    return result
 
 
-def push_all() -> Dict[str, Any]:
-    """Full push: HF for everything + one GitHub commit for text."""
-    hf = sync_all()
-    gh = push_github()
-    retry = retry_pending()
-    return {
-        "success": True,
-        "hf": hf,
-        "github": gh,
-        "pending": retry,
-    }
+def _watcher_loop() -> None:
+    while not _stop_flag:
+        try:
+            _flush()
+        except Exception:
+            pass
+        # Sleep in small chunks to respond fast to stop_flag
+        for _ in range(WATCH_INTERVAL * 2):
+            if _stop_flag:
+                return
+            time.sleep(0.5)
 
+
+# ═══════════════════════════════════════════════════════════
+# Status
+# ═══════════════════════════════════════════════════════════
 
 def status() -> Dict[str, Any]:
-    """Return sync status summary."""
-    state = _load_state()
-    pending = _load_pending()
+    with _lock:
+        q = len(_queue)
     return {
-        "tracked_files": len(state.get("files", {})),
-        "last_sync": state.get("last_sync"),
-        "pending": len(pending.get("queue", [])),
+        "queued": q,
+        "watcher_alive": _watcher.is_alive() if _watcher else False,
+        "last_online": _last_online,
     }
 
 
-# ───────────────────────────────────────────────────────────
-# Hooks for MOROAI
-# ───────────────────────────────────────────────────────────
-
-def notify_skill_learned(skill: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Called by MOROAI when it learns a new skill.
-    Appends to skills.json and syncs.
-    """
-    skills = _load_json(SKILLS_FILE, [])
-    if not isinstance(skills, list):
-        skills = []
-    if "learned_at" not in skill:
-        skill["learned_at"] = datetime.now().isoformat()
-    skills.append(skill)
-    _save_json(SKILLS_FILE, skills)
-    return sync_now(SKILLS_FILE)
-
-
-# ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════
 # CLI
-# ───────────────────────────────────────────────────────────
-
-def _print_banner():
-    print("=" * 50)
-    print("  MOROAI — Sync Cloud")
-    print("=" * 50)
-    print()
-
+# ═══════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     import sys
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
 
-    _print_banner()
+    print("=" * 50)
+    print("  MOROAI — Sync Cloud")
+    print("=" * 50)
+    print()
 
     if cmd == "status":
         s = status()
-        print("📊 الحالة:")
-        print(f"   ملفات مُتابَعة : {s['tracked_files']}")
-        print(f"   آخر مزامنة    : {s['last_sync'] or '(لم تحدث بعد)'}")
-        print(f"   في الانتظار   : {s['pending']}")
-
-    elif cmd == "push":
-        print("⏳ جاري المزامنة الكاملة...")
-        r = push_all()
-        print(f"   HF   : {r['hf']['ok']}/{r['hf']['total']} نجح")
-        print(f"   GH   : {r['github'].get('committed')}")
-        print(f"   معلّق: {r['pending']['retried']}")
-
-    elif cmd == "retry":
-        r = retry_pending()
-        print(f"✅ أُعيد المحاولة: {r['retried']} — تم رفع: {r['cleared']}")
-
-    elif cmd == "pull":
-        print("(pull غير مُنفَّذ بعد — سيُبنى لاحقاً)")
-
+        print(f"  في الطابور : {s['queued']}")
+        print(f"  المراقب    : {'يعمل' if s['watcher_alive'] else 'متوقف'}")
+        print(f"  متصل       : {s['last_online']}")
+    elif cmd == "flush":
+        _queue_load()
+        r = _flush()
+        print(f"  ✅ تم رفع : {r['flushed']}")
+        print(f"  ⚠️ فشل    : {r['failed']}")
+    elif cmd == "watch":
+        print("⏳ تشغيل المراقب... (Ctrl+C للإيقاف)")
+        start_watcher()
+        try:
+            while True:
+                time.sleep(5)
+        except KeyboardInterrupt:
+            on_shutdown()
+            print("\n✅ توقف")
     else:
         print(f"أمر غير معروف: {cmd}")
-        print("الأوامر: status | push | retry | pull")
