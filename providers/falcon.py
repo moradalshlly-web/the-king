@@ -1,14 +1,15 @@
 """
-providers/ollama_cloud.py
-=========================
+providers/falcon.py
+===================
 
-Ollama Cloud provider adapter for MOROAI.
+Falcon-H1-Arabic provider adapter for MOROAI.
 
-Runs large models on Ollama's cloud without a local GPU.
-Free tier: $0, no credit card, 1 concurrent session,
-resets every 5 hours (session) / 7 days (weekly).
+Arabic-first model by TII (Abu Dhabi).
+7B variant scores 71.47% on Open Arabic LLM Leaderboard.
+Supports MSA + Egyptian, Levantine, Gulf, Maghrebi dialects.
+256K context window. 100% free.
 
-Models categorized by specialization.
+Accessed via Ollama Cloud (remote, no local GPU needed).
 """
 
 import json
@@ -23,38 +24,15 @@ except ImportError:
     from base import BaseProvider, ProviderConfig, AIResponse
 
 
-# ============================================================
-# Model catalog (free tier only)
-# ============================================================
-
-OLLAMA_CLOUD_MODELS = {
-    # Programming & coding
-    "minimax-m2.5:cloud":        {"type": "code",        "priority": 1},
-    "gpt-oss:120b-cloud":        {"type": "code",        "priority": 2},
-    "qwen3-coder-next:cloud":    {"type": "code",        "priority": 3},
-    "devstral-small-2:24b-cloud":{"type": "code",        "priority": 4},
-
-    # Multilingual / general
-    "gemma4:31b-cloud":          {"type": "multilingual","priority": 1},
-    "qwen3.5:cloud":             {"type": "multilingual","priority": 2},
-
-    # Reasoning & deep analysis
-    "deepseek-v4-flash:cloud":   {"type": "reasoning",   "priority": 1},
-    "mistral-large-3:675b-cloud":{"type": "reasoning",   "priority": 2},
-
-    # Lightweight / fast
-    "gpt-oss:20b-cloud":         {"type": "fast",        "priority": 1},
-    "ministral-3:14b-cloud":     {"type": "fast",        "priority": 2},
-    "ministral-3:8b-cloud":      {"type": "fast",        "priority": 3},
-}
-
-
-OLLAMA_CLOUD_DEFAULT_CONFIG = ProviderConfig(
-    name="ollama_cloud",
+FALCON_DEFAULT_CONFIG = ProviderConfig(
+    name="falcon",
     enabled=True,
     priority=2,
-    models=list(OLLAMA_CLOUD_MODELS.keys()),
-    capabilities=["chat", "code"],
+    models=[
+        "hf.co/tiiuae/Falcon-H1-Arabic-7B-Instruct-GGUF:Q4_K_M",
+        "hf.co/tiiuae/Falcon-H1-Arabic-3B-Instruct-GGUF:Q4_K_M",
+    ],
+    capabilities=["chat"],
     api_key_env="OLLAMA_API_KEY",
     base_url="https://ollama.com/api/chat",
     is_free=True,
@@ -64,13 +42,13 @@ OLLAMA_CLOUD_DEFAULT_CONFIG = ProviderConfig(
 )
 
 
-class OllamaCloudProvider(BaseProvider):
+class FalconProvider(BaseProvider):
     def __init__(self, config: Optional[ProviderConfig] = None):
-        super().__init__(config or OLLAMA_CLOUD_DEFAULT_CONFIG)
+        super().__init__(config or FALCON_DEFAULT_CONFIG)
 
     @property
     def name(self) -> str:
-        return "ollama_cloud"
+        return "falcon"
 
     def is_available(self) -> bool:
         if not self.config.enabled:
@@ -81,11 +59,6 @@ class OllamaCloudProvider(BaseProvider):
 
     def list_models(self) -> List[str]:
         return list(self.config.models)
-
-    def list_models_by_type(self, model_type: str) -> List[str]:
-        """Return models filtered by type (code, multilingual, reasoning, fast)."""
-        return [m for m, info in OLLAMA_CLOUD_MODELS.items()
-                if info.get("type") == model_type]
 
     def chat(
         self,
@@ -98,10 +71,7 @@ class OllamaCloudProvider(BaseProvider):
         start = self._start_timer()
 
         if not self.is_available():
-            return self._error_response(
-                "Ollama Cloud unavailable (no API key).",
-                code=503,
-            )
+            return self._error_response("Falcon unavailable (no API key).", code=503)
 
         chosen_model = model or self.config.models[0]
 
@@ -161,16 +131,11 @@ class OllamaCloudProvider(BaseProvider):
         except urllib.error.URLError as e:
             return self._error_response(f"Network: {e.reason}", code=503)
         except Exception as e:
-            return self._error_response(
-                f"{type(e).__name__}: {e}", code=500,
-            )
+            return self._error_response(f"{type(e).__name__}: {e}", code=500)
 
 
 if __name__ == "__main__":
-    p = OllamaCloudProvider()
+    p = FalconProvider()
     print(f"Name     : {p.name}")
     print(f"Available: {p.is_available()}")
-    print(f"Total    : {len(p.list_models())} models")
-    print()
-    for t in ["code", "multilingual", "reasoning", "fast"]:
-        print(f"{t:15}: {p.list_models_by_type(t)}")
+    print(f"Models   : {p.list_models()}")

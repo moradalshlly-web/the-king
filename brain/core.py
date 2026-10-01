@@ -27,6 +27,7 @@ from brain.core_paths import PROJECT_ROOT
 from brain import prime_directives as PD
 from brain import router as task_router
 from brain import owner_profile as OP
+from brain import quota_monitor
 
 from memory.checkpoint import CheckpointManager
 from memory.manager import MemoryManager
@@ -247,6 +248,15 @@ class MOROAI:
             system=combined_system,
             temperature=temperature,
         )
+
+        # 4.5 QUOTA CHECK (after each Ollama Cloud usage)
+        if response.provider == "ollama_cloud" and response.success:
+            try:
+                usage = quota_monitor.get_usage(force=True)
+                if usage.get("monthly", 0.0) >= 0.90:
+                    print("\n⚠️  Ollama Cloud quota at 90%+ — switching to next provider...")
+            except Exception:
+                pass
 
         # 5. REFLECT: save to memory + learning DB
         self._log(prompt, response, content_class)
