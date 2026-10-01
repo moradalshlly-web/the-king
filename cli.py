@@ -47,30 +47,78 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time as _time
 
 
-def _search_all_parallel(query, web_limit=5, yt_limit=3, reddit_limit=3):
+def _search_all_parallel(query, web_limit=5, yt_limit=3, reddit_limit=3,
+                         show_progress=True):
     """
-    Run 3 searches concurrently. Returns dict with timing.
+    Run 3 searches concurrently with optional Rich progress bars.
+    Falls back silently if Rich unavailable.
     """
     started = _time.time()
-    results = {"web": [], "youtube": [], "reddit": [], "errors": {}}
+    results = {"web": [], "youtube": [], "reddit": [], "errors": {},
+               "task_times": {}}
 
-    def _web():
-        return ("web", search_web(query, limit=web_limit))
+    tasks_def = [
+        ("web",     lambda: search_web(query, limit=web_limit),      "🌐 Web"),
+        ("youtube", lambda: search_youtube(query, limit=yt_limit),   "📺 YouTube"),
+        ("reddit",  lambda: search_reddit(query, limit=reddit_limit), "💬 Reddit"),
+    ]
 
-    def _yt():
-        return ("youtube", search_youtube(query, limit=yt_limit))
+    # Try Rich
+    try:
+        from rich.progress import (
+            Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn,
+        )
+        use_rich = True
+    except Exception:
+        use_rich = False
 
-    def _rd():
-        return ("reddit", search_reddit(query, limit=reddit_limit))
+    if use_rich and show_progress:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold cyan]{task.description}"),
+            BarColumn(),
+            TimeElapsedColumn(),
+            transient=False,
+            refresh_per_second=4,
+        ) as progress:
+            task_ids = {}
+            labels = {}
+            for key, _, label in tasks_def:
+                task_ids[key] = progress.add_task(label, total=1)
+                labels[key] = label
 
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        futures = [ex.submit(_web), ex.submit(_yt), ex.submit(_rd)]
-        for fut in as_completed(futures):
-            try:
-                key, value = fut.result()
-                results[key] = value
-            except Exception as e:
-                results["errors"][str(e)] = str(e)
+            task_start = {}
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                futures = {}
+                for key, func, _ in tasks_def:
+                    task_start[key] = _time.time()
+                    futures[ex.submit(func)] = key
+
+                for fut in as_completed(futures):
+                    key = futures[fut]
+                    try:
+                        results[key] = fut.result()
+                    except Exception as e:
+                        results["errors"][key] = str(e)
+                    elapsed = round(_time.time() - task_start[key], 2)
+                    results["task_times"][key] = elapsed
+                    progress.update(
+                        task_ids[key],
+                        completed=1,
+                        description=f"✅ {labels[key]} ({elapsed}s)",
+                    )
+    else:
+        # Silent fallback
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            futures = {}
+            for key, func, _ in tasks_def:
+                futures[ex.submit(func)] = key
+            for fut in as_completed(futures):
+                key = futures[fut]
+                try:
+                    results[key] = fut.result()
+                except Exception as e:
+                    results["errors"][key] = str(e)
 
     results["elapsed"] = round(_time.time() - started, 2)
     return results
@@ -566,7 +614,7 @@ def main():
                     print(c("Usage: /search <query>", YELLOW))
                 else:
                     print(c(f"Searching (parallel): {args}", DIM))
-                    r = _search_all_parallel(args)
+                    r = _search_all_parallel(args, show_progress=True)
 
                     # ── WEB ──
                     print()
@@ -602,7 +650,11 @@ def main():
                             print(c(f"     {item['url']}", DIM))
 
                     print()
-                    print(c(f"⏱️  تم البحث في {r.get('elapsed', '?')} ثانية (بالتوازي)", DIM))
+                    times = r.get("task_times", {})
+                    if times:
+                        parts = [f"{k}={v}s" for k, v in times.items()]
+                        print(c(f"⏱️  الأوقات: {'  '.join(parts)}", DIM))
+                    print(c(f"⏱️  الزمن الكلي: {r.get('elapsed', '?')} ثانية (بالتوازي)", DIM))
 
             # List files
             elif cmd == "/ls":
