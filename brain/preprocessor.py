@@ -45,6 +45,17 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "text_to_speech": [
+        r"اقرأ\s+بصوت",
+        r"قل\s+بصوت",
+        r"حوّل\s+إلى\s+صوت",
+        r"انطق\s+",
+        r"صوت\s+عربي\s+طبيعي",
+        r"\btext\s+to\s+speech\b",
+        r"\btts\b",
+        r"\bspeak\s+",
+        r"\bhakim\b",
+    ],
     "audio_transcribe": [
         r"فرغ\s+الصوت",
         r"حول\s+الصوت\s+إلى\s+نص",
@@ -256,6 +267,8 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "wikipedia_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "image_generate":
                     return {"tool": "image_generate", "args": {"prompt": query, "width": 1024, "height": 1024}}
+                if tool_name == "text_to_speech":
+                    return {"tool": "text_to_speech", "args": {"text": query}}
                 if tool_name == "audio_transcribe":
                     audio_path = _extract_audio_path(message)
                     return {"tool": "audio_transcribe", "args": {"path": audio_path}}
@@ -360,6 +373,35 @@ def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
                 "error": r.get("error"),
             }
 
+        if tool == "text_to_speech":
+            # Try Hakim first (better Arabic), fallback to edge-tts
+            text_to_convert = args.get("text", "")
+            voice = args.get("voice", "cmokbc1r70001vu39tnmjj9v7")
+            try:
+                from tools.hakim_tts import synthesize
+                r = synthesize(text_to_convert, voice=voice)
+                if r.get("success"):
+                    return {
+                        "success": True,
+                        "path": r.get("path"),
+                        "kind": "speech",
+                        "engine": "hakim",
+                        "error": None,
+                    }
+            except Exception:
+                pass
+
+            # Fallback to edge-tts
+            from tools.edge_tts import text_to_speech
+            r = text_to_speech(text_to_convert, voice="ar-EG-SalmaNeural")
+            return {
+                "success": r.get("success", False),
+                "path": r.get("path"),
+                "kind": "speech",
+                "engine": "edge-tts",
+                "error": r.get("error"),
+            }
+
         if tool == "audio_transcribe":
             from tools.whisper import transcribe
             r = transcribe(args.get("path", ""), language=args.get("language"))
@@ -412,6 +454,12 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
         return "\n".join(lines)
+
+    if kind == "speech":
+        if not result.get("success"):
+            return f"[فشل توليد الصوت] {result.get('error','unknown')}"
+        engine = result.get("engine", "?")
+        return f"[تم توليد الصوت — {engine}]\n{result.get('path','')}"
 
     if kind == "transcript":
         if not result.get("success"):

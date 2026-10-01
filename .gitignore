@@ -1,10 +1,31 @@
-node_modules/
+# ─── Python ───
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# ─── Node ───
+node_modules/
+
+# ─── Secrets ───
 .env
 *.log
+
+# ─── Large generated output ───
+output/
+
+# ─── MOROAI runtime (session-specific) ───
+# We keep only meaningful state, not per-second changes
+.moroai/session_state.json
 .moroai/workspace/
 .moroai/checkpoints/
-output/
 .moroai/search_cache/
-.moroai/search_history/
+.moroai/sessions/
+
+# ─── Local backups ───
+memory/vision/_backups/
+
+# ─── Personal MOROAI data (private) ───
+memory/data/

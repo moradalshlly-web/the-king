@@ -22,6 +22,9 @@ VISION_FILES = {
     "capabilities": "CAPABILITIES.md",
     "gaps": "GAPS.md",
     "roadmap": "ROADMAP.md",
+    "roadmap_2026": "ROADMAP_2026.md",
+    "smart_routing": "SMART_ROUTING.md",
+    "research_topics": "RESEARCH_TOPICS.md",
 }
 
 
@@ -50,6 +53,12 @@ def vision_prompt() -> str:
         parts.append("### GAPS\n" + v["gaps"])
     if v["roadmap"]:
         parts.append("### ROADMAP\n" + v["roadmap"])
+    if v.get("roadmap_2026"):
+        parts.append("### ROADMAP_2026\n" + v["roadmap_2026"])
+    if v.get("smart_routing"):
+        parts.append("### SMART_ROUTING\n" + v["smart_routing"])
+    if v.get("research_topics"):
+        parts.append("### RESEARCH_TOPICS\n" + v["research_topics"])
     return "\n\n".join(parts)
 
 
@@ -57,7 +66,7 @@ def vision_summary() -> str:
     """Short summary for status display."""
     v = load_vision()
     lines = []
-    for k in ["mission", "capabilities", "gaps", "roadmap"]:
+    for k in ["mission", "capabilities", "gaps", "roadmap", "roadmap_2026", "smart_routing", "research_topics"]:
         size = len(v.get(k, ""))
         lines.append(f"  {k:15} : {size} chars")
     return "\n".join(lines)

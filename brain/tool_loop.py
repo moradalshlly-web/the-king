@@ -22,6 +22,7 @@ from typing import Dict, Any, Optional
 
 from brain import tools_registry as TR
 from brain import preprocessor as PP
+from providers.base import AIResponse
 
 
 MAX_ITERATIONS = 3
@@ -168,7 +169,84 @@ def register_default_tools() -> None:
         func=lambda path, language=None: _do_transcribe(path, language),
     )
 
+    # text_to_speech (Hakim + edge-tts fallback)
+    TR.register(
+        name="text_to_speech",
+        description="Generate speech from text. Arabic-first with automatic fallback (Hakim AI -> edge-tts).",
+        params='text="<text>" voice="Nadia"',
+        func=lambda text, voice="cmokbc1r70001vu39tnmjj9v7": _do_text_to_speech(text, voice),
+    )
+
     _registered = True
+
+
+# ============================================================
+# Tool helper functions
+# ============================================================
+
+def _do_text_to_speech(text, voice="cmokbc1r70001vu39tnmjj9v7"):
+    """Generate speech from text: try Hakim (Arabic), fallback to edge-tts."""
+    text = (text or "").strip()
+    if not text:
+        return {"success": False, "error": "Empty text", "kind": "speech"}
+
+    try:
+        from tools.hakim_tts import synthesize
+        r = synthesize(text, voice=voice)
+        if r.get("success"):
+            return {
+                "success": True,
+                "path": r.get("path"),
+                "kind": "speech",
+                "engine": "hakim",
+                "error": None,
+            }
+    except Exception:
+        pass
+
+    try:
+        from tools.edge_tts import text_to_speech
+        r = text_to_speech(text, voice="ar-EG-SalmaNeural")
+        return {
+            "success": r.get("success", False),
+            "path": r.get("path"),
+            "kind": "speech",
+            "engine": "edge-tts",
+            "error": r.get("error"),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e), "kind": "speech"}
+
+
+def _do_image(prompt, width=1024, height=1024, model="flux"):
+    """Generate an image via Pollinations (free, no key)."""
+    try:
+        from tools.pollinations import generate_image
+        r = generate_image(prompt, width=int(width), height=int(height))
+        return {
+            "success": r.get("success", False),
+            "path": r.get("path"),
+            "kind": "image",
+            "error": r.get("error"),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e), "kind": "image"}
+
+
+def _do_transcribe(path, language=None):
+    """Transcribe audio file to text via Groq Whisper."""
+    try:
+        from tools.whisper import transcribe
+        r = transcribe(path, language=language)
+        return {
+            "success": r.get("success", False),
+            "text": r.get("text", ""),
+            "language": r.get("language"),
+            "kind": "transcript",
+            "error": r.get("error"),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e), "kind": "transcript"}
 
 
 def _format_reddit(posts) -> str:
@@ -208,6 +286,44 @@ def _format_youtube(results) -> str:
     return "\n".join(lines)
 
 
+def _media_direct_response(result, tool_name):
+    """Build a direct AIResponse for media outputs (no LLM roundtrip)."""
+    if not result.get("success"):
+        text = "[فشل " + tool_name + "] " + str(result.get("error", "unknown"))
+        return AIResponse(
+            text=text,
+            model=tool_name,
+            provider="direct",
+            success=False,
+            error=result.get("error"),
+            latency_ms=0,
+        )
+
+    kind = result.get("kind", "")
+    path = result.get("path", "")
+
+    if kind == "speech":
+        engine = result.get("engine", "?")
+        text = "[تم توليد الصوت — " + engine + "]\n" + path
+    elif kind == "image":
+        text = "[تم توليد الصورة]\n" + path
+    elif kind == "transcript":
+        text = result.get("text", "(فارغ)")
+        lang = result.get("language", "")
+        if lang:
+            text = "[" + lang + "]\n" + text
+    else:
+        text = "[تم التنفيذ]\n" + str(result)
+
+    return AIResponse(
+        text=text,
+        model=tool_name,
+        provider="direct",
+        success=True,
+        latency_ms=0,
+    )
+
+
 def run_with_tools(
     brain,
     prompt: str,
@@ -231,6 +347,11 @@ def run_with_tools(
 
         # Execute the tool immediately
         result = PP.execute_preempt(detected)
+
+        # For media tools (speech/image/transcript): return directly, no LLM
+        if result.get("kind") in ("speech", "image", "transcript"):
+            return _media_direct_response(result, detected["tool"])
+
         formatted = PP.format_results(result)
 
         # Build a new prompt that includes the tool result

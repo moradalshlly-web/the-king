@@ -22,6 +22,7 @@ import os
 from typing import Dict, Optional, Any
 
 from brain.vision import vision_prompt, load_vision
+from brain.project_scanner import manifest_prompt
 from tools.file_ops import FileOps
 
 
@@ -87,6 +88,62 @@ Strict rules:
 """
 
 
+def _read_latest_reports(limit: int = 3) -> str:
+    """
+    Read the latest reports from project_analyzer.
+    Priority: local files first. If none found, read from cloud.
+    """
+    import os
+    try:
+        from brain.core_paths import PROJECT_ROOT
+    except ImportError:
+        PROJECT_ROOT = os.path.expanduser("~/moroai")
+
+    reports_dir = os.path.join(PROJECT_ROOT, "memory", "workspace", "analyzer")
+
+    # ─── Try local first ───
+    parts = []
+    if os.path.isdir(reports_dir):
+        try:
+            files = [
+                os.path.join(reports_dir, f)
+                for f in os.listdir(reports_dir)
+                if f.endswith(".md")
+            ]
+            files.sort(key=os.path.getmtime, reverse=True)
+            files = files[:limit]
+
+            for fp in files:
+                try:
+                    with open(fp, "r", encoding="utf-8") as f:
+                        parts.append(f.read()[:3000])
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # ─── If local is empty, try cloud ───
+    if not parts:
+        try:
+            from tools.cloud_memory import list_reports, download_report
+            listing = list_reports()
+            if listing.get("success") and listing.get("files"):
+                # get the latest (they are already sorted by HF)
+                cloud_files = sorted(listing["files"], reverse=True)[:limit]
+                for remote_path in cloud_files:
+                    try:
+                        r = download_report(remote_path)
+                        if r.get("success"):
+                            with open(r["local_path"], "r", encoding="utf-8") as f:
+                                parts.append(f.read()[:3000])
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    return "\n\n---\n\n".join(parts)
+
+
 class EvolveEngine:
     def __init__(self, brain):
         self.brain = brain
@@ -96,22 +153,33 @@ class EvolveEngine:
 
     def propose(self) -> Optional[Dict[str, str]]:
         """Ask the LLM for the next evolution step."""
-        v = load_vision()
-        caps = v.get("capabilities", "")
-        gaps = v.get("gaps", "")
-        roadmap = v.get("roadmap", "")
+        vision = vision_prompt()
+        manifest = manifest_prompt()
+        reports = _read_latest_reports(limit=3)
 
-        prompt = f"""Current capabilities:
-{caps}
+        prompt = (
+            "=== MOROAI VISION (all 7 files) ===\n"
+            + vision
+            + "\n\n=== CURRENT PROJECT FILES (what already exists) ===\n"
+            + manifest
+        )
 
-Known gaps:
-{gaps}
+        if reports:
+            prompt += (
+                "\n\n=== RECENT OPEN-SOURCE ANALYSIS REPORTS ===\n"
+                + reports
+                + "\n\nUse these reports to ground your proposal in real projects.\n"
+            )
 
-Roadmap:
-{roadmap}
-
-Based on the above, propose the SINGLE most important next step.
-Output in the required format."""
+        prompt += (
+            "\n\nBased on the above:\n"
+            + "1. Identify the SINGLE most important next step toward the vision.\n"
+            + "2. BEFORE proposing to CREATE a file, check the manifest above.\n"
+            + "3. If the target file already exists, use action=modify.\n"
+            + "4. If it does not exist, use action=create.\n"
+            + "5. If a recent analysis report is relevant, mention the project by name.\n"
+            + "\nOutput in the required format."
+        )
 
         resp = self.brain.ask(
             prompt=prompt,
