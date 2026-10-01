@@ -1,0 +1,643 @@
+{
+  "version": 1,
+  "files": {
+    "brain/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790634013.2458105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:31.004662"
+    },
+    "brain/session.py": {
+      "hash": "662b563e7c606e96235474cb922e4da50d4d6db1728e521a9daa3d726928f6c4",
+      "size": 7415,
+      "mtime": 1790671688.3040001,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:34.898379"
+    },
+    "brain/core_paths.py": {
+      "hash": "4e8e5e058c88de36479d52d0026eed916b7204cdb5bd82be59302cd998899f2c",
+      "size": 690,
+      "mtime": 1790639966.7298107,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:36.024835"
+    },
+    "brain/prime_directives.py": {
+      "hash": "f6041c9800ab8ba66153633b9fa7509008d5357f3c367baea2361dce0fe94901",
+      "size": 7316,
+      "mtime": 1790640683.4338107,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:40.176385"
+    },
+    "brain/owner_profile.py": {
+      "hash": "a00383c2fcdebe8ddec8d0e2de988f8a144cf79be38a910b25e9b81eb39dd232",
+      "size": 13165,
+      "mtime": 1790641257.9258108,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:42.167628"
+    },
+    "brain/core.py": {
+      "hash": "9002ce391b88177730ba69362ce99ab0bbde9be6e08bf92c63d6f869a131d378",
+      "size": 12938,
+      "mtime": 1790825906.2920005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:45.853712"
+    },
+    "brain/identity.py": {
+      "hash": "5ab01b961f208e433ae489f7fa669561cc9e1593db3d897e806a14293ac9e30b",
+      "size": 409,
+      "mtime": 1790643236.941811,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:47.495923"
+    },
+    "brain/reflection.py": {
+      "hash": "eb77ea70190085b8a21d460b1837c6b92a656fdeca1f8904f1963475528dba54",
+      "size": 5600,
+      "mtime": 1790671096.8760002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:50.056801"
+    },
+    "brain/tools_registry.py": {
+      "hash": "acd80fe6f12602d9df0a77c2f3f880ebe9f7e03c85f262be3a0ca500392637e2",
+      "size": 5080,
+      "mtime": 1790672550.6320002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:52.506111"
+    },
+    "brain/tool_loop.py": {
+      "hash": "2aefbcf2c6c46c9fef3cf2ef0cc9778b26a746ec0b3ebf7037b0cacb61ea98a0",
+      "size": 14064,
+      "mtime": 1790838093.7163424,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:55.274624"
+    },
+    "brain/builder.py": {
+      "hash": "6d416cf82c3827a1dcdfc5cca3cb668fa01f6d2a9f322e00ced57f7a5bb694e9",
+      "size": 5811,
+      "mtime": 1790673688.0120003,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:56.811458"
+    },
+    "brain/vision.py": {
+      "hash": "850158fb0c7c2208ab1db7080e1132578c58752ed62f0748b36cfb0aeb5374c2",
+      "size": 2319,
+      "mtime": 1790848812.204343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:58.147027"
+    },
+    "brain/evolve.py": {
+      "hash": "68801aea3947757dfb814714fcaa3b34d01dadab7d113d2d5e0ed67e1b38e3b3",
+      "size": 8197,
+      "mtime": 1790854291.5923433,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:05:59.577517"
+    },
+    "brain/rendezvous.py": {
+      "hash": "b1feb9aaa8b1db03ae8278daa78111fbe451d5f7cfe5eda4216fb6ef03fe3466",
+      "size": 3863,
+      "mtime": 1790785202.9174032,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:00.971091"
+    },
+    "brain/preprocessor.py": {
+      "hash": "7381f3fba88dd88f71944ff3dd641fd0585ea6aaa3c5cfced2a550bbcb9e9688",
+      "size": 19392,
+      "mtime": 1790829459.7520006,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:03.673413"
+    },
+    "brain/router.py": {
+      "hash": "75fffa89e08a7cddf11f7f9ebac02347530e73bfd7c4065059ce89b7237ac1d4",
+      "size": 4554,
+      "mtime": 1790825951.1040006,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:04.698538"
+    },
+    "brain/search_cache.py": {
+      "hash": "7083b48a212e7d3cdca1d88e3704ac3001c881e9afe5887ff3a8f02d563e56ff",
+      "size": 2106,
+      "mtime": 1790805185.2258916,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:06.970810"
+    },
+    "brain/search_history.py": {
+      "hash": "9f4e377864fe0658547b713f4356f380ae90989e90424a4f689e1771bbcf17c5",
+      "size": 8276,
+      "mtime": 1790807329.8818917,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:09.716176"
+    },
+    "brain/history_updater.py": {
+      "hash": "956cf36d82ed988b60cce7dbf831cfc2900a3be3a3f4c17486e41a1e512dabb6",
+      "size": 2286,
+      "mtime": 1790807646.1178918,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:11.763843"
+    },
+    "brain/quota_monitor.py": {
+      "hash": "9d6ccd41df482bd2611c20c61ec839605ff2a052b019a5e77c78dd9ac1e2a1b3",
+      "size": 4425,
+      "mtime": 1790819990.292,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:13.708518"
+    },
+    "brain/project_scanner.py": {
+      "hash": "fb83a4c8a40db7b1b2a6ed6edcaf37bd09db5418d3ecca50045516ab47528d99",
+      "size": 4988,
+      "mtime": 1790836907.6883423,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:14.939901"
+    },
+    "brain/prompts/identity.txt": {
+      "hash": "7b6b2eecdaa9602dcf641f7def7fe2523647d6c57d220fd24ccb4170672a62e2",
+      "size": 1373,
+      "mtime": 1790792358.0396388,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:16.168004"
+    },
+    "tools/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790634013.2498105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:17.189149"
+    },
+    "tools/reddit.py": {
+      "hash": "53e01026cd9af2376d9ee3e9bf9618dd086b4a192d4ec5abf1cedaea2eca2063",
+      "size": 4405,
+      "mtime": 1790671884.124,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:19.854739"
+    },
+    "tools/file_ops.py": {
+      "hash": "d31d88a57b8ee81080445a1e364bacf422202c31014d64cbc641eb1731e69b87",
+      "size": 8442,
+      "mtime": 1790672220.3320003,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:22.926326"
+    },
+    "tools/shell.py": {
+      "hash": "10c6dc1beb22f33fcef07a10344b2448de518397d2702ede451e4272b045c8bf",
+      "size": 9335,
+      "mtime": 1790672283.6920002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:24.560832"
+    },
+    "tools/web_search.py": {
+      "hash": "b78081cc9637bc7fa3ff4430329c8de60fc2bed5fc0d1a39318238ccac70d549",
+      "size": 3333,
+      "mtime": 1790789230.5454035,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:26.535742"
+    },
+    "tools/youtube.py": {
+      "hash": "7b9f4ce3a3e5cdb943de2df8703560041f78b10201d260ecd9e54d875d47aa05",
+      "size": 2620,
+      "mtime": 1790788416.7254033,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:28.898240"
+    },
+    "tools/github.py": {
+      "hash": "ce129f1cd02dd8aa713fbdc6c77fbec3deb1cd1cb464cbb3a644c35c09b72f68",
+      "size": 5469,
+      "mtime": 1790803882.9618914,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:33.679660"
+    },
+    "tools/stack_exchange.py": {
+      "hash": "75909456032f76fd3679d8e29ad6e6982d18098812806fd2ab50b1131e622291",
+      "size": 3464,
+      "mtime": 1790821643.9880002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:35.111167"
+    },
+    "tools/wikipedia.py": {
+      "hash": "0d0a026bff6283d683e8d21fe88b2d0f2511edb51e876b5f22ec26caae9c2bf7",
+      "size": 3754,
+      "mtime": 1790821795.6480002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:36.442523"
+    },
+    "tools/pollinations.py": {
+      "hash": "8f6164c4a4e11e58bfa8a26fdc0655f1f97372e37f65af5c671159ff8c5f72d8",
+      "size": 4297,
+      "mtime": 1790825292.8840003,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:37.935102"
+    },
+    "tools/whisper.py": {
+      "hash": "abfcc6fa40707e833b55ce469251e9a9d8e11bd80d6226f2b561e1d930bc7142",
+      "size": 4833,
+      "mtime": 1790826117.2680004,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:40.333757"
+    },
+    "tools/edge_tts.py": {
+      "hash": "270208ca9474e2c991d9853de6f4a09d8202e680846675466c2f1b6855067092",
+      "size": 4125,
+      "mtime": 1790827242.9760005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:46.581773"
+    },
+    "tools/hakim_tts.py": {
+      "hash": "1b32af8ec5c770e728555866672774420d4fdb38a8333b82a7be92b4add180b4",
+      "size": 5056,
+      "mtime": 1790829352.7840006,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:06:51.292146"
+    },
+    "tools/project_analyzer.py": {
+      "hash": "c28fc0cfe4db8495f97370abd2e8abe684a05a102432226c3ecc3f8ca3cd7c4a",
+      "size": 15110,
+      "mtime": 1790854122.3683434,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:07:04.399698"
+    },
+    "tools/cloud_memory.py": {
+      "hash": "340c22345ceedc24cfe01df7c284db09f49f8737afb926dd1e92faf8d6d512cf",
+      "size": 13806,
+      "mtime": 1790854459.7123435,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:08:01.441550"
+    },
+    "tools/sync_cloud.py": {
+      "hash": "b4eea246ad773747c348f92194e1ad3088f4d436bcb4774a84a977e6e29f0a08",
+      "size": 16881,
+      "mtime": 1790859889.9083438,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:08:53.655335"
+    },
+    "providers/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790634013.2498105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:08:55.500662"
+    },
+    "providers/base.py": {
+      "hash": "e34f0828176c10ba2ac2884588cd1d7b5fd1500b2d6d8dad30da9a993b74ca97",
+      "size": 6185,
+      "mtime": 1790676048.4960005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:08:57.940258"
+    },
+    "providers/registry.py": {
+      "hash": "61937c30617db99717059e25725d384298e1c747ae2ee9b42bb11b590bbba43b",
+      "size": 9062,
+      "mtime": 1790825906.2920005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:08:59.491696"
+    },
+    "providers/groq.py": {
+      "hash": "58ed5b74ad6e3215d93d4b81a2d1374af9af3106aa32c820bb458856636b77fe",
+      "size": 6068,
+      "mtime": 1790634904.0818105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:01.441415"
+    },
+    "providers/gemini.py": {
+      "hash": "63e71c805bb1fcf0f8245339baca1c21a854e8528616e7609a7e00e772602c44",
+      "size": 5828,
+      "mtime": 1790676065.8320005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:04.308458"
+    },
+    "providers/openrouter.py": {
+      "hash": "267898696ddbdf3a5fcb7436900a2527a9c2468891c6b0dccc7d4b1d830be058",
+      "size": 4819,
+      "mtime": 1790674829.3240004,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:05.433503"
+    },
+    "providers/ollama.py": {
+      "hash": "8430dc70146b71ba076a8543cf29c78712e0bbcb181183a466719d88d06a45c5",
+      "size": 4247,
+      "mtime": 1790787412.8654034,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:06.761278"
+    },
+    "providers/ollama_cloud.py": {
+      "hash": "13428e77fea8038d15823a7d0fe6de1ea2d500c216080cbf5e49539e9b6b1642",
+      "size": 5063,
+      "mtime": 1790820573.4320002,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:08.506865"
+    },
+    "providers/nvidia.py": {
+      "hash": "a0235e4fb85406d730e0042586438e8da8108b51565d86844497ac21228e1bd5",
+      "size": 5250,
+      "mtime": 1790824931.7040005,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:09.839466"
+    },
+    "providers/mistral.py": {
+      "hash": "b49ddc19883ace88ad009bdd1c46b9ff3c06d0372f14a6b1ea04bd17ced2d5ab",
+      "size": 4976,
+      "mtime": 1790825838.7280004,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:11.371778"
+    },
+    "memory/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790634013.2498105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:13.215433"
+    },
+    "memory/checkpoint.py": {
+      "hash": "587fba2776dc9516d061eb1735318f1aed03e8b95008ff29000e13540b46cd77",
+      "size": 6553,
+      "mtime": 1790639700.6898108,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:14.908349"
+    },
+    "memory/workspace.py": {
+      "hash": "b542e84ddf445f2b3a71241126b58b3b6fb26b4bef92752b47544f8733ef01d1",
+      "size": 11105,
+      "mtime": 1790639789.2178109,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:17.080692"
+    },
+    "memory/manager.py": {
+      "hash": "0070b7ab196811098336f84b4805bac375f51861b09bd29f2112e3eb0167f9db",
+      "size": 4002,
+      "mtime": 1790641431.1498108,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:19.463089"
+    },
+    "memory/learning.py": {
+      "hash": "aca7ac7ca2ad9ba634ef77c6ed86cc61c97482955e3254d2212d33d01b8ed240",
+      "size": 6470,
+      "mtime": 1790671040.944,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:21.052627"
+    },
+    "memory/vision/MISSION.md": {
+      "hash": "60abad657dd04ebf0d070d376f4972715166f14d1818f0beb73bb1c0515e7a57",
+      "size": 3132,
+      "mtime": 1790833774.7003422,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:22.734819"
+    },
+    "memory/vision/CAPABILITIES.md": {
+      "hash": "4e910ab62b1c8dfb00ec964143a26e239dde1517240fc1eac9731ac0660f2324",
+      "size": 4042,
+      "mtime": 1790834034.0363421,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:24.373540"
+    },
+    "memory/vision/GAPS.md": {
+      "hash": "c56d36b66e19fe5b828df4a68399cdcb7499c8206b8c53d22b8874bbe0b3de66",
+      "size": 4453,
+      "mtime": 1790838232.7763424,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:25.384117"
+    },
+    "memory/vision/ROADMAP.md": {
+      "hash": "0d965da41580d27a51515f8bdd58a2999d6f0d89d10adf102daf30d749c1f34b",
+      "size": 5694,
+      "mtime": 1790834541.0003421,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:28.676300"
+    },
+    "memory/vision/ROADMAP_2026.md": {
+      "hash": "caa6d580a4a55ae94a45777077a055ff54dee25083180dda4f35ceeeebbf42b4",
+      "size": 5987,
+      "mtime": 1790835016.1483421,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:31.803642"
+    },
+    "memory/vision/SMART_ROUTING.md": {
+      "hash": "6d3b4cf253d5fc82f6d741e1bf8842323d7c208e5b9e9e06713e624e64e4c101",
+      "size": 10907,
+      "mtime": 1790836185.2523422,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:48.441483"
+    },
+    "memory/vision/RESEARCH_TOPICS.md": {
+      "hash": "8d6d09c356f8d4e26c12d7a6137ef4f314c187fc201daccdc821d149ecc5385e",
+      "size": 4501,
+      "mtime": 1790848696.040343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:56.017537"
+    },
+    "memory/vision/_backups/CAPABILITIES_old_backup.md": {
+      "hash": "b7612d9b4476bf0b3574fe1882f28ab9593c19dab420ecf3c014b3972f7ea09a",
+      "size": 1368,
+      "mtime": 1790834023.224342,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:57.647873"
+    },
+    "memory/vision/_backups/GAPS_old_backup.md": {
+      "hash": "e44d1be657968a3c2999de38841c4871f640366eb456ab811b4f9fe6c6183049",
+      "size": 878,
+      "mtime": 1790834235.968342,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:09:59.292237"
+    },
+    "memory/vision/_backups/MISSION_old_backup.md": {
+      "hash": "e69fe40148ef9572e5c5233b21e1eee46a328a04e758263e36d450facc76c019",
+      "size": 1355,
+      "mtime": 1790833765.520342,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:01.238353"
+    },
+    "memory/vision/_backups/ROADMAP_2026_old_backup.md": {
+      "hash": "80e5de48ba1bd4c8f05df390c5d5c491415d7aaa3c5eb29888de78005a6aea23",
+      "size": 4495,
+      "mtime": 1790834850.1763422,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:04.186966"
+    },
+    "memory/vision/_backups/SMART_ROUTING_old_backup.md": {
+      "hash": "2163c9da4dfc7e5ee158154d76a928795c893fc12fc329a8b4f478c2b670f960",
+      "size": 7518,
+      "mtime": 1790836039.7323422,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:07.860749"
+    },
+    "memory/vision/_backups/project_scanner_broken.py": {
+      "hash": "aff117240e85f6780b074132f5df71c1f59bdd5904c689b5101370c55027b36e",
+      "size": 5293,
+      "mtime": 1790836907.5963423,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:12.206844"
+    },
+    "memory/vision/_backups/vision_old_backup.py": {
+      "hash": "7e8ec45a5197a2e88979f0bbdfd5f32294e555e975a6b6ef073f4d55c78acfe4",
+      "size": 1851,
+      "mtime": 1790836336.7763424,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:13.650492"
+    },
+    "memory/vision/_backups/evolve_old_backup.py": {
+      "hash": "1a61b1c3d54d5c0262acdc482404493a4970c75efa106cec26020f330feecdab",
+      "size": 5867,
+      "mtime": 1790850150.1403432,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:16.493618"
+    },
+    "memory/vision/_backups/GAPS_pre_evolve_backup.md": {
+      "hash": "226a12d09fb75203353b7b8297600a1d22436d731521cd2d7bb0b253696cbfe8",
+      "size": 4694,
+      "mtime": 1790837293.5603423,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:23.522854"
+    },
+    "memory/vision/_backups/tool_loop_old_backup.py": {
+      "hash": "dd0f93ee6315abf766b42458e92b40ea64af1641bece10d437ed6c620969f22c",
+      "size": 10321,
+      "mtime": 1790837668.1603425,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:29.840272"
+    },
+    "memory/vision/_backups/tool_loop_old_backup2.py": {
+      "hash": "cd5a996ac825f1838f4efdcb3d0e315c83a5be85e42ba23592fb5640c2f129a2",
+      "size": 12671,
+      "mtime": 1790838093.4163425,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:38.512534"
+    },
+    "memory/vision/_backups/GAPS_pre_gap45_backup.md": {
+      "hash": "dd33cd1c928b93b0db2b2b45d79e747ba07c77eda86ee5ba27b6f35a1706e88d",
+      "size": 4807,
+      "mtime": 1790838200.8723423,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:40.980979"
+    },
+    "memory/vision/_backups/evolve_old_backup2.py": {
+      "hash": "9c015fad751e15c2a9f643f85a2745f9cf3e6b9c9dbf9f9fb7454090ffea2048",
+      "size": 7267,
+      "mtime": 1790854291.3243434,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:51.108343"
+    },
+    "memory/workspace/analyzer/report-20261001-132845-self-improving_ai_systems.md": {
+      "hash": "70a85d735a3a99f9a5f92125aa4e1eee90a9fa20c51d88cd0e19c8b67ec79fce",
+      "size": 1080,
+      "mtime": 1790854125.4683433,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:54.467835"
+    },
+    "memory/workspace/analyzer/report-20261001-121100-self-improving_ai_systems.md": {
+      "hash": "35722fb60838aa52cedc40e75c4fe7d422bce9bd2a0eaf147b12fee851fd426d",
+      "size": 1080,
+      "mtime": 1790849460.544343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:55.589284"
+    },
+    "memory/workspace/analyzer/report-20261001-120644-self-improving_ai_systems.md": {
+      "hash": "abd148d84f63f7fd7e8fd50855466b016af170d1f3c097712fb94c46858f7547",
+      "size": 1075,
+      "mtime": 1790849204.376343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:56.898271"
+    },
+    "memory/workspace/analyzer/report-20261001-120951-self-improving_ai_systems.md": {
+      "hash": "8ae12c4ca29e1f6bcbc4c667c64c3dd19d43804b80ff1c9f6142cf888f7b08ea",
+      "size": 1075,
+      "mtime": 1790849391.212343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:58.685936"
+    },
+    "memory/workspace/analyzer/.cache/huggingface/.gitignore": {
+      "hash": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+      "size": 1,
+      "mtime": 1790854383.5723433,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:10:59.570741"
+    },
+    "memory/workspace/analyzer/.cache/huggingface/download/analyzer/report-20261001-132845-self-improving_ai_systems.md.lock": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790854480.5123434,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:00.773199"
+    },
+    "memory/workspace/analyzer/.cache/huggingface/download/analyzer/report-20261001-132845-self-improving_ai_systems.md.metadata": {
+      "hash": "d802a198452f822d0f91352f05287f23f47021be6b031f507a07f37a33f3cf87",
+      "size": 101,
+      "mtime": 1790854480.5123434,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:01.761429"
+    },
+    "memory/workspace/analyzer/.cache/huggingface/download/analyzer/report-20261001-121100-self-improving_ai_systems.md.lock": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790854481.0803435,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:02.785676"
+    },
+    "memory/workspace/analyzer/.cache/huggingface/download/analyzer/report-20261001-121100-self-improving_ai_systems.md.metadata": {
+      "hash": "c69a0a25fe907462df12a67cc619dab31c5729876da4761a9311ab206480127f",
+      "size": 101,
+      "mtime": 1790854481.0803435,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:04.014587"
+    },
+    "web_new/index.html": {
+      "hash": "90fa7b2a841fb479ea0cf765f47b2d28b95e5f6767ae08bf86c59e8c5ddcffcd",
+      "size": 21234,
+      "mtime": 1790845070.5643427,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:04.754839"
+    },
+    "web_new/images/moroai_character_1_1790841124432.jpg": {
+      "hash": "7ce00e08d5e4564f2a5150ed25be46d96f25cf974aca031a497840ac7b644090",
+      "size": 879083,
+      "mtime": 1790844454.2403429,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:05.959776"
+    },
+    "web_new/images/moroai_character_2_1790841135964.jpg": {
+      "hash": "139c28f9dbf73a619aa67e69b4f6b3b5fc6b3f17f1f516c4c0dc2bc788414b66",
+      "size": 800118,
+      "mtime": 1790844454.2443428,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:06.941365"
+    },
+    "web_new/images/moroai_character_3_1790841148865.jpg": {
+      "hash": "006ec833992f6f2f41f4d1240b7a4d2490fb0a87431014d042719ebd5912cd06",
+      "size": 877254,
+      "mtime": 1790844454.2523427,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:08.212952"
+    },
+    "web_new/images/moroai_novel_scene_1790841160303.jpg": {
+      "hash": "7376d80d6d91b37c1abe38caa644201367847748d9966a24e0b8fc12e441e1e6",
+      "size": 1007048,
+      "mtime": 1790844454.2603428,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:09.463935"
+    },
+    "web_new/images/moroai_user_avatar_1790841171361.jpg": {
+      "hash": "ca0debb38085b3f01bb93e36e6f214e39d9be4bb608986fa1ff3a89aec12ac42",
+      "size": 619528,
+      "mtime": 1790844454.2643428,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:11:11.175911"
+    },
+    "web_new/vendor/tailwind.js": {
+      "hash": "3f81aa7f6ecdb1acc14c202e513dfee00b6c7703cd81ce1be25bf5215a92e8cb",
+      "size": 451131,
+      "mtime": 1790845039.420343,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:13:56.748746"
+    },
+    "web_new/vendor/three.min.js": {
+      "hash": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2",
+      "size": 603445,
+      "mtime": 1790845042.1643429,
+      "synced_hf": false,
+      "synced_at": "2026-10-01T15:17:00.632612"
+    },
+    "config/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "mtime": 1790634013.2498105,
+      "synced_hf": true,
+      "synced_at": "2026-10-01T15:17:03.302439"
+    }
+  },
+  "last_sync": "2026-10-01T15:17:03.302483"
+}

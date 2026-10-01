@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "queue": [
+    {
+      "path": "web_new/vendor/three.min.js",
+      "dest": "hf",
+      "added_at": "2026-10-01T15:17:00.661387"
+    }
+  ]
+}
