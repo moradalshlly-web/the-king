@@ -29,3 +29,7 @@ memory/vision/_backups/
 
 # ─── Personal MOROAI data (private) ───
 memory/data/
+
+# ─── Large files (kept on Hugging Face) ───
+web_new/vendor/
+web_new/images/
