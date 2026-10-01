@@ -45,6 +45,13 @@ PATTERNS = {
         r"\bsearch\s+youtube\b",
         r"فيديو\s+يشرح",
     ],
+    "audio_transcribe": [
+        r"فرغ\s+الصوت",
+        r"حول\s+الصوت\s+إلى\s+نص",
+        r"فرّغ\s+",
+        r"transcribe\s+",
+        r"\bspeech\s+to\s+text\b",
+    ],
     "image_generate": [
         r"ارسم\s+",
         r"ولد\s+صورة",
@@ -109,6 +116,19 @@ def _extract_after_verb(text: str, verbs: List[str]) -> str:
             if len(parts) > 1:
                 return parts[1].strip()
     return text
+
+
+def _extract_audio_path(msg: str) -> str:
+    """Extract file path from an audio transcription request."""
+    import re
+    # Try to find a path-like token (contains / or .mp3/.wav/.m4a etc.)
+    tokens = msg.split()
+    for tok in tokens:
+        # Look for /, extensions, or dots indicating file path
+        if "/" in tok or re.search(r"\.(mp3|wav|m4a|ogg|flac|mp4|webm|opus|aac)$", tok, re.IGNORECASE):
+            return tok.strip('"').strip("'")
+    # Fallback: last word
+    return tokens[-1] if tokens else msg
 
 
 def _extract_query(msg: str) -> str:
@@ -236,6 +256,9 @@ def detect_tool(message: str) -> Optional[Dict[str, Any]]:
                     return {"tool": "wikipedia_search", "args": {"query": query, "limit": 5}}
                 if tool_name == "image_generate":
                     return {"tool": "image_generate", "args": {"prompt": query, "width": 1024, "height": 1024}}
+                if tool_name == "audio_transcribe":
+                    audio_path = _extract_audio_path(message)
+                    return {"tool": "audio_transcribe", "args": {"path": audio_path}}
                 if tool_name == "read_file":
                     return {"tool": "read_file", "args": {"path": query}}
                 if tool_name == "list_dir":
@@ -337,6 +360,17 @@ def _execute_preempt_uncached(tool_call: Dict[str, Any]) -> Dict[str, Any]:
                 "error": r.get("error"),
             }
 
+        if tool == "audio_transcribe":
+            from tools.whisper import transcribe
+            r = transcribe(args.get("path", ""), language=args.get("language"))
+            return {
+                "success": r.get("success", False),
+                "text": r.get("text", ""),
+                "language": r.get("language"),
+                "kind": "transcript",
+                "error": r.get("error"),
+            }
+
         if tool == "read_file":
             from tools.file_ops import FileOps
             fops = FileOps()
@@ -378,6 +412,11 @@ def format_results(result: Dict[str, Any]) -> str:
             lines.append(f"   {r.get('url','')}")
             lines.append(f"   القناة: {r.get('channel','?')}  المدة: {r.get('duration','?')}s")
         return "\n".join(lines)
+
+    if kind == "transcript":
+        if not result.get("success"):
+            return f"[فشل التحويل] {result.get('error','unknown')}"
+        return f"[النص المُستخرج]\n{result.get('text','')}"
 
     if kind == "image":
         if not result.get("success"):

@@ -49,6 +49,7 @@ def register_default_tools() -> None:
     from tools.stack_exchange import search_stackexchange
     from tools.wikipedia import search_wikipedia, get_summary
     from tools.pollinations import generate_image
+    from tools.whisper import transcribe
 
     fops = FileOps()
     sops = ShellOps()
@@ -157,6 +158,14 @@ def register_default_tools() -> None:
         description="Generate an image from a text description (free, no API key).",
         params='prompt="<text>" width=1024 height=1024 model="flux"',
         func=lambda prompt, width=1024, height=1024, model="flux": _do_image(prompt, width, height, model),
+    )
+
+    # audio_transcribe
+    TR.register(
+        name="audio_transcribe",
+        description="Transcribe an audio file to text (Arabic, English, 90+ langs).",
+        params='path="<audio_file>" language="ar"',
+        func=lambda path, language=None: _do_transcribe(path, language),
     )
 
     _registered = True
