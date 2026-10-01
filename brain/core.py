@@ -180,6 +180,7 @@ class MOROAI:
         system: Optional[str] = None,
         temperature: float = 0.7,
         model: Optional[str] = None,
+        on_chunk=None,
     ) -> AIResponse:
         """Main entry: receive prompt, route, execute, remember."""
 
@@ -268,12 +269,22 @@ class MOROAI:
         if chosen_provider:
             provider_obj = self.registry.get(chosen_provider)
             if provider_obj and provider_obj.is_available() and model:
-                response = provider_obj.chat(
-                    prompt=prompt,
-                    model=model,
-                    system=combined_system,
-                    temperature=temperature,
-                )
+                try:
+                    response = provider_obj.chat(
+                        prompt=prompt,
+                        model=model,
+                        system=combined_system,
+                        temperature=temperature,
+                        on_chunk=on_chunk,
+                    )
+                except TypeError:
+                    # Provider doesn't support on_chunk yet — fall back
+                    response = provider_obj.chat(
+                        prompt=prompt,
+                        model=model,
+                        system=combined_system,
+                        temperature=temperature,
+                    )
 
         # Fallback to full registry chain
         if response is None or not response.success:

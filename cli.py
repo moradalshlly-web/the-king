@@ -815,14 +815,41 @@ def main():
         if forced_model:
             kwargs["model"] = forced_model
 
+        # ═══ Streaming setup ═══
+        is_streaming = [True]  # mutable flag
+        printed_any = [False]
+
+        def on_chunk(text):
+            if is_streaming[0]:
+                if not printed_any[0]:
+                    print()
+                    printed_any[0] = True
+                print(c(text, CYAN), end="", flush=True)
+
         if tools_enabled:
-            resp = run_with_tools(brain, raw, content_class=content_class)
+            resp = run_with_tools(
+                brain, raw,
+                content_class=content_class,
+                on_chunk=on_chunk,
+            )
         else:
-            resp = brain.ask(prompt=raw, **kwargs)
+            resp = brain.ask(
+                prompt=raw,
+                on_chunk=on_chunk,
+                **kwargs,
+            )
+
+        # End streaming
+        is_streaming[0] = False
 
         if resp.success:
-            print()
-            print(c(resp.text, CYAN))
+            if printed_any[0]:
+                # already printed via streaming — just add newline
+                print()
+            else:
+                # fallback: nothing streamed
+                print()
+                print(c(resp.text, CYAN))
             meta = f"  [{resp.provider} · {resp.model} · {resp.latency_ms:.0f}ms]"
             print(c(meta, DIM))
             messages_log.append({

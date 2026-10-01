@@ -331,6 +331,7 @@ def run_with_tools(
     system: Optional[str] = None,
     max_iterations: int = MAX_ITERATIONS,
     verbose: bool = False,
+    on_chunk=None,
 ):
     """
     Run the agentic loop.
@@ -378,6 +379,7 @@ def run_with_tools(
             prompt=enriched_prompt,
             content_class=content_class,
             system=system,
+            on_chunk=on_chunk,
         )
         return response
 
@@ -393,6 +395,7 @@ def run_with_tools(
         prompt=prompt,
         content_class=content_class,
         system=sys,
+        on_chunk=on_chunk,
     )
 
     if not response.success:
@@ -438,6 +441,7 @@ def run_with_tools(
             prompt=followup_prompt,
             content_class=content_class,
             system=sys,
+            on_chunk=on_chunk,
         )
         if not response.success:
             return response

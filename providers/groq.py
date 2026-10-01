@@ -40,10 +40,10 @@ GROQ_DEFAULT_CONFIG = ProviderConfig(
     enabled=True,
     priority=1,
     models=[
-        "qwen/qwen3.8-27b",
-        "openai/gpt-oss-20b",
-        "openai/gpt-oss-120b",
-        "llama-3.1-8b-instant",
+        "openai/gpt-oss-20b",        # fast, supports streaming
+        "openai/gpt-oss-120b",       # stronger, supports streaming
+        "qwen/qwen3.8-27b",          # arabic-friendly (no streaming)
+        "allam-2-7b",                # arabic-native (SDAIA)
     ],
     capabilities=["chat", "code"],
     api_key_env="GROQ_API_KEY",
@@ -78,6 +78,64 @@ class GroqProvider(BaseProvider):
         key = os.getenv(self.config.api_key_env, "").strip()
         return bool(key)
 
+    def _stream_request(self, req, model_name, start, on_chunk) -> AIResponse:
+        """
+        Handle an SSE streaming response from Groq.
+        Calls on_chunk(text) for each token as it arrives.
+        Returns the full AIResponse when the stream ends.
+        """
+        collected = []
+        tokens = None
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                for raw_line in resp:
+                    if not raw_line:
+                        continue
+                    try:
+                        line = raw_line.decode("utf-8", errors="replace").strip()
+                    except Exception:
+                        continue
+                    if not line or not line.startswith("data: "):
+                        continue
+                    data_str = line[6:].strip()
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+                    choices = chunk.get("choices") or []
+                    if choices:
+                        delta = choices[0].get("delta") or {}
+                        piece = delta.get("content") or ""
+                        if piece:
+                            collected.append(piece)
+                            try:
+                                on_chunk(piece)
+                            except Exception:
+                                pass
+                    # usage may appear on the last chunk
+                    u = chunk.get("usage")
+                    if u:
+                        tokens = u.get("total_tokens", tokens)
+
+            text = "".join(collected)
+            return AIResponse(
+                text=text,
+                model=model_name,
+                provider=self.name,
+                success=True,
+                tokens_used=tokens,
+                latency_ms=self._elapsed_ms(start),
+                error=None,
+            )
+        except urllib.error.HTTPError as e:
+            return self._error_response(f"HTTP {e.code}: {e.reason}", code=e.code)
+        except urllib.error.URLError as e:
+            return self._error_response(f"Network: {e.reason}", code=None)
+        except Exception as e:
+            return self._error_response(f"{type(e).__name__}: {e}", code=None)
+
     def list_models(self) -> List[str]:
         return list(self.config.models)
 
@@ -88,6 +146,7 @@ class GroqProvider(BaseProvider):
         system: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
+        on_chunk=None,
     ) -> AIResponse:
         """Send a chat request to Groq."""
 
@@ -120,6 +179,11 @@ class GroqProvider(BaseProvider):
         if max_tokens is not None:
             payload["max_tokens"] = max_tokens
 
+        # Enable streaming when caller provides a chunk handler
+        streaming = on_chunk is not None
+        if streaming:
+            payload["stream"] = True
+
         # 4. Build HTTP request
         api_key = os.getenv(self.config.api_key_env, "").strip()
         headers = {
@@ -138,6 +202,11 @@ class GroqProvider(BaseProvider):
 
         # 5. Execute and handle response
         try:
+            # ─── Streaming path ───
+            if streaming:
+                return self._stream_request(req, chosen_model, start, on_chunk)
+
+            # ─── Non-streaming path (original) ───
             with urllib.request.urlopen(req, timeout=60) as resp:
                 raw = resp.read().decode("utf-8")
                 body = json.loads(raw)
