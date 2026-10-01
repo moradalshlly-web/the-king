@@ -33,6 +33,12 @@ from brain.evolve import EvolveEngine
 from brain.vision import vision_summary
 from brain import search_history
 from brain import history_updater
+
+# Enhanced CLI input (prompt_toolkit with fallback)
+try:
+    from cli_input import ask_user
+except Exception:
+    ask_user = input
 from tools.reddit import search_reddit
 from tools.web_search import search_web
 from tools.youtube import search_youtube
@@ -279,7 +285,7 @@ def main():
     while True:
         try:
             prompt_str = f"\n{c('MOROAI', MAGENTA)} [{content_class}]> "
-            raw = input(prompt_str).strip()
+            raw = ask_user(prompt_str).strip()
         except (EOFError, KeyboardInterrupt):
             print()
             raw = "/exit"
