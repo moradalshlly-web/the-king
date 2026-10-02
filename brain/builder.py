@@ -132,18 +132,20 @@ class Builder:
 
         # Extra rules for HTML files
         if ext_low == ".html":
-            # Compute sibling folder for script/style hints
-            folder = os.path.dirname(target_path).replace("\\", "/")
             design_block += (
                 "\n=== HTML-SPECIFIC RULES (STRICT) ===\n"
+                "0. The <html> tag MUST be:  <html lang=\"ar\" dir=\"rtl\" data-theme=\"purple\">\n"
+                "   These three attributes are MANDATORY. Do not omit them.\n"
                 "1. If you reference a script, it MUST be <script src=\"script.js\"></script>\n"
                 "   (assume sibling file in the SAME folder — no ../).\n"
                 "2. If you reference a style.css, it MUST be <link href=\"style.css\">\n"
                 "   (assume sibling). If you only use design.css, DO NOT create a style.css.\n"
-                "3. NEVER reference files that were not created and are not part of the design system.\n"
-                "4. NEVER use placeholder image URLs like via.placeholder.com.\n"
+                "3. ALWAYS link design.css with the correct relative path shown above.\n"
+                "4. NEVER reference files that were not created and are not part of the design system.\n"
+                "5. NEVER use placeholder image URLs like via.placeholder.com.\n"
                 "   Use inline SVG, CSS gradients, or leave a comment <!-- image here -->.\n"
-                "5. Do NOT invent class names. Only use classes listed in the DESIGN SYSTEM block above.\n"
+                "6. Do NOT invent class names. Only use classes listed in the DESIGN SYSTEM block above.\n"
+                "7. Start with <!DOCTYPE html> and end with </html> — complete valid HTML only.\n"
                 "=== END HTML-SPECIFIC RULES ===\n"
             )
 
