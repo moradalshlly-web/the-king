@@ -51,12 +51,47 @@ BUILD_TARGETS = [
     "web_new", "tools/", "brain/", "providers/",
 ]
 
+# ─── Site-related markers (implies site_edit) ───
+SITE_TARGETS = [
+    "الموقع", "موقع", "الصفحة", "صفحة", "الشات", "الشاشة",
+    "مربع البحث", "زر الإرسال", "القائمة", "الهيدر", "الفوتر",
+    "الدرج", "الشعار", "اللوجو", "اللون", "الألوان", "الثيم",
+    "الخلفية", "الواجهة", "العنوان",
+    "moroai.com", "web_new", "index.html",
+]
+
+SITE_VERBS = [
+    "غيّر", "غير", "عدّل", "عدل", "أضف", "اضف", "ضيف",
+    "احذف", "امسح", "خلي", "اجعل", "خليه", "خليها",
+    "بدّل", "بدل", "استبدل", "حرّك", "حرك", "انقل",
+]
+
 
 def _contains_any(text: str, items) -> str:
     for item in items:
         if item in text:
             return item
     return ""
+
+
+def _contains_any_in(text: str, items) -> str:
+    for item in items:
+        if item in text:
+            return item
+    return ""
+
+
+def detect_site_edit(message: str) -> bool:
+    """
+    Return True if the message is an instruction to modify the website.
+    Requires: site target + action verb.
+    """
+    if not message:
+        return False
+    msg = message.strip()
+    target = _contains_any_in(msg, SITE_TARGETS)
+    verb = _contains_any_in(msg, SITE_VERBS)
+    return bool(target and verb)
 
 
 def classify_keywords(message: str) -> Dict[str, Any]:
@@ -71,6 +106,11 @@ def classify_keywords(message: str) -> Dict[str, Any]:
     q = _contains_any(lower, [q.lower() for q in QUESTION_MARKERS])
     b = _contains_any(msg, BUILD_VERBS)
     t = _contains_any(lower, [x.lower() for x in BUILD_TARGETS])
+
+    # Site edit takes priority over generic build
+    if detect_site_edit(msg):
+        return {"mode": "site_edit", "confidence": 0.9,
+                "reason": "site target + modification verb"}
 
     if q and not b:
         return {"mode": "chat", "confidence": 0.9,

@@ -120,12 +120,6 @@ def handle(brain, message: str,
 
     mode = cls.get("mode", "chat")
 
-    # ─── 2a.5 Site edit path (MUST be before chat) ───
-    if mode == "site_edit":
-        if verbose:
-            print(f"🌐 [site_edit · {cls.get('confidence', 0):.2f}] mode ← site editor")
-        return _handle_site_edit(brain, message, verbose=verbose)
-
     # ─── 2a. Chat path ───
     if mode != "build":
         if verbose:
@@ -135,6 +129,12 @@ def handle(brain, message: str,
             content_class=content_class,
         )
         return _render_chat(resp)
+
+    # ─── 2a.5 Site edit path ───
+    if mode == "site_edit":
+        if verbose:
+            print(f"🌐 [site_edit · {cls.get('confidence', 0):.2f}] mode ← site editor")
+        return _handle_site_edit(brain, message, verbose=verbose)
 
     # ─── 2b. Build path ───
     if verbose:
