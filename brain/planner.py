@@ -45,13 +45,29 @@ GOLDEN RULE — "ASSUME, DON'T ASK":
       (e.g., gibberish, or "do the thing" with zero context).
 
 Rules:
-1. Break the task into 3-10 small steps.
+1. Break the task into the FEWEST steps needed (2-6 is usually enough).
 2. Each step MUST have: action ("create" | "modify" | "delete"), path (relative), description (1 sentence).
 3. Prefer small files (< 200 lines each).
 4. NEVER plan to modify protected files: cli.py, brain/core.py, brain/evolve.py, brain/prime_directives.py, brain/identity.py, brain/owner_profile.py.
-5. For website requests: put files under web_new/, assume a clean modern style unless told otherwise.
-6. For tools: put under tools/.
-7. Output valid JSON only. No markdown fences. No extra text.
+5. For tools: put under tools/.
+
+WEBSITE RULES (very important):
+    - Put website files under web_new/ (or a subfolder like web_new/<project>/).
+    - The project already has a Design System at web_new/design.css.
+    - ALWAYS link it: <link rel="stylesheet" href="../design.css">  (adjust ../ by depth).
+    - If you use design.css, DO NOT plan a separate style.css file.
+      Only plan style.css if the user explicitly needs custom styles
+      beyond the design system.
+    - DO NOT plan a script.js file unless the page actually needs JavaScript
+      (e.g., interactive menu, form validation). A landing page can be pure HTML.
+    - Prefer ONE index.html + (optionally) ONE script.js. No style.css by default.
+    - Use CSS classes from the design system only: navbar, hero, hero-title,
+      hero-subtitle, btn, btn-primary, btn-secondary, card, card-glass, badge,
+      badge-accent, badge-success, container, container-sm, grid, grid-3, row,
+      row-between, stack, mt-4, mt-8, mb-4, mb-8, text-center, text-muted,
+      text-accent, text-luxury.
+
+8. Output valid JSON only. No markdown fences. No extra text.
 
 OUTPUT FORMAT (strict):
 {
