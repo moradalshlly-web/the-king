@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دخول — {{BRAND}}</title>
+    <link rel="stylesheet" href="../design.css">
+    <style>
+        .auth-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-4);
+            background: radial-gradient(ellipse at center, var(--color-accent-deep) 0%, var(--color-bg-deep) 70%);
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--color-bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-bright);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8);
+            box-shadow: var(--shadow-lg);
+        }
+    </style>
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h2 class="text-center mb-8">{{BRAND}}</h2>
+        <div class="stack">
+            <div>
+                <label class="text-muted mb-4" style="display:block;">البريد الإلكتروني</label>
+                <input type="email" class="input" placeholder="you@example.com">
+            </div>
+            <div>
+                <label class="text-muted mb-4" style="display:block;">كلمة المرور</label>
+                <input type="password" class="input" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" style="width:100%;">دخول</button>
+            <p class="text-center text-muted mt-4">
+                ليس لديك حساب؟ <a href="#">أنشئ حساباً</a>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}}</title>
+    <link rel="stylesheet" href="../design.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container row row-between">
+        <span class="navbar-brand">{{BRAND}}</span>
+        <div class="row">
+            <a href="#features" class="btn btn-ghost">المميزات</a>
+            <a href="#pricing" class="btn btn-ghost">الأسعار</a>
+            <button class="btn btn-primary">ابدأ مجاناً</button>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container-sm">
+        <div class="badge badge-accent mb-4">{{BADGE}}</div>
+        <h1 class="hero-title">{{HERO_TITLE}}</h1>
+        <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
+        <div class="row row-center mt-8">
+            <button class="btn btn-primary">ابدأ الآن</button>
+            <button class="btn btn-secondary">شاهد العرض</button>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="container mt-8 mb-8">
+    <h2 class="text-center mb-8">المميزات</h2>
+    <div class="grid grid-3">
+        <div class="card">
+            <h4>⚡ سرعة</h4>
+            <p class="text-muted">أداء عالٍ بلا تنازلات.</p>
+        </div>
+        <div class="card">
+            <h4>🎨 تصميم</h4>
+            <p class="text-muted">واجهات فخمة ومتسقة.</p>
+        </div>
+        <div class="card">
+            <h4>🔒 أمان</h4>
+            <p class="text-muted">حماية كاملة لبياناتك.</p>
+        </div>
+    </div>
+</section>
+
+<section id="pricing" class="container mt-8 mb-8">
+    <h2 class="text-center mb-8">الأسعار</h2>
+    <div class="grid grid-3">
+        <div class="card">
+            <h4>مجاني</h4>
+            <div class="text-3xl text-accent">0$</div>
+            <button class="btn btn-secondary mt-4">ابدأ</button>
+        </div>
+        <div class="card" style="border-color: var(--color-accent);">
+            <span class="badge badge-accent">الأكثر شعبية</span>
+            <h4 class="mt-4">احترافي</h4>
+            <div class="text-3xl text-accent">19$</div>
+            <button class="btn btn-primary mt-4">اشترك</button>
+        </div>
+        <div class="card">
+            <h4>مؤسسات</h4>
+            <div class="text-3xl text-accent">تواصل</div>
+            <button class="btn btn-secondary mt-4">اتصل بنا</button>
+        </div>
+    </div>
+</section>
+
+<section class="container mt-8 mb-8">
+    <div class="card-glass text-center" style="padding: var(--space-12);">
+        <h2 class="mb-4">جاهز للبدء؟</h2>
+        <p class="text-muted mb-8">انضم إلى آلاف المستخدمين اليوم.</p>
+        <button class="btn btn-primary">ابدأ مجاناً</button>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <p>© 2026 {{BRAND}} · جميع الحقوق محفوظة</p>
+    </div>
+</footer>
+
+</body>
+</html>

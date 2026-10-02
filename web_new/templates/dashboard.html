@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}} — Dashboard</title>
+    <link rel="stylesheet" href="../design.css">
+    <style>
+        .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        .sidebar {
+            background: var(--color-bg-elevated);
+            border-left: 1px solid var(--border-subtle);
+            padding: var(--space-6);
+        }
+        .sidebar-nav a {
+            display: block;
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-1);
+        }
+        .sidebar-nav a.active, .sidebar-nav a:hover {
+            background: var(--color-accent-deep);
+            color: var(--text-primary);
+        }
+        .main { padding: var(--space-6); }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); }
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="navbar-brand mb-8">{{BRAND}}</div>
+        <nav class="sidebar-nav">
+            <a href="#" class="active">📊 اللوحة</a>
+            <a href="#">📁 المشاريع</a>
+            <a href="#">👥 الفريق</a>
+            <a href="#">⚙️ الإعدادات</a>
+        </nav>
+    </aside>
+    <main class="main">
+        <div class="topbar">
+            <h2>لوحة التحكم</h2>
+            <button class="btn btn-primary">إجراء جديد</button>
+        </div>
+        <div class="grid grid-3 mb-8">
+            <div class="card">
+                <div class="text-muted">المستخدمون</div>
+                <div class="text-3xl text-accent">1,234</div>
+            </div>
+            <div class="card">
+                <div class="text-muted">الطلبات</div>
+                <div class="text-3xl text-accent">5,678</div>
+            </div>
+            <div class="card">
+                <div class="text-muted">الإيرادات</div>
+                <div class="text-3xl text-accent">$12K</div>
+            </div>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">آخر النشاطات</h4>
+            <div class="stack-sm">
+                <div class="row row-between"><span>مستخدم جديد سجّل</span><span class="badge badge-success">قبل 5 د</span></div>
+                <div class="row row-between"><span>طلب اكتمل</span><span class="badge badge-success">قبل 12 د</span></div>
+                <div class="row row-between"><span>تحديث النظام</span><span class="badge">قبل ساعة</span></div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

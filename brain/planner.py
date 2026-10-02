@@ -246,6 +246,14 @@ def plan(brain, task: str, context: str = "",
     except Exception:
         pass
 
+    # Available templates
+    templates_block = ""
+    try:
+        from brain.template_loader import template_context
+        templates_block = template_context()
+    except Exception:
+        pass
+
     user_prompt = f"""TASK (from owner, could be Arabic or English):
 {task.strip()}
 
@@ -267,6 +275,8 @@ IMPORTANT RULES:
 {vision_short}
 
 {skills_block}
+
+{templates_block}
 
 {context}
 
