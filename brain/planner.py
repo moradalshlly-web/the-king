@@ -21,7 +21,9 @@ Output format:
 """
 
 import json
+import os
 import re
+from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 try:
@@ -35,17 +37,26 @@ PLANNER_SYSTEM = """You are MOROAI's Planner — the architect.
 
 You receive a natural-language request and produce a CONCRETE, ORDERED plan.
 
+GOLDEN RULE — "ASSUME, DON'T ASK":
+    - If the request is reasonable but slightly unclear, DO NOT ask.
+    - Instead, make 2-4 sensible assumptions and PROCEED with the plan.
+    - State your assumptions in an "assumptions" field (Arabic).
+    - Only use action="ask" if the request is COMPLETELY unactionable
+      (e.g., gibberish, or "do the thing" with zero context).
+
 Rules:
 1. Break the task into 3-10 small steps.
 2. Each step MUST have: action ("create" | "modify" | "delete"), path (relative), description (1 sentence).
 3. Prefer small files (< 200 lines each).
 4. NEVER plan to modify protected files: cli.py, brain/core.py, brain/evolve.py, brain/prime_directives.py, brain/identity.py, brain/owner_profile.py.
-5. If the request is unclear, ask ONE clarifying question (with action="ask").
-6. Output valid JSON only. No markdown fences. No extra text.
+5. For website requests: put files under web_new/, assume a clean modern style unless told otherwise.
+6. For tools: put under tools/.
+7. Output valid JSON only. No markdown fences. No extra text.
 
 OUTPUT FORMAT (strict):
 {
-  "summary": "one-line summary of the plan",
+  "summary": "one-line summary (English, concise)",
+  "assumptions": ["<assumption 1 in Arabic>", "<assumption 2>"],
   "steps": [
     {"n": 1, "action": "create", "path": "path/to/file.ext", "description": "what this step does"},
     ...
@@ -53,11 +64,12 @@ OUTPUT FORMAT (strict):
   "reasoning": "why this plan (1-2 sentences)"
 }
 
-If you need clarification:
+CLARIFICATION (rare — only if truly unactionable):
 {
   "summary": "need clarification",
+  "assumptions": [],
   "steps": [{"n": 1, "action": "ask", "path": "", "description": "the question"}],
-  "reasoning": "why we need this"
+  "reasoning": "why we cannot proceed"
 }
 """
 
@@ -151,12 +163,31 @@ def _validate_plan(plan: dict) -> Dict[str, Any]:
     if not clean_steps:
         return {"success": False, "error": "no valid steps"}
 
+    assumptions_raw = plan.get("assumptions") or []
+    if not isinstance(assumptions_raw, list):
+        assumptions_raw = [str(assumptions_raw)]
+    assumptions = [str(a)[:250] for a in assumptions_raw[:6]]
+
     return {
         "success": True,
         "summary": (plan.get("summary") or "")[:200],
+        "assumptions": assumptions,
         "steps": clean_steps,
         "reasoning": (plan.get("reasoning") or "")[:500],
     }
+
+
+def _save_failure(stage: str, task: str, raw: str) -> None:
+    """Save a failed LLM response for later review."""
+    try:
+        folder = os.path.join(PROJECT_ROOT, "memory", "planner_failures")
+        os.makedirs(folder, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        fname = f"{ts}-{stage}.txt"
+        with open(os.path.join(folder, fname), "w", encoding="utf-8") as f:
+            f.write(f"STAGE: {stage}\nTASK: {task}\n\n--- RAW ---\n{raw[:4000]}")
+    except Exception:
+        pass
 
 
 def plan(brain, task: str, context: str = "",
@@ -239,10 +270,35 @@ Produce the plan as JSON only."""
 
     raw = resp.text or ""
     parsed = _extract_json(raw)
+
+    # Retry once with a strict prompt if parsing failed
+    if not parsed:
+        _save_failure("first_attempt", task, raw)
+        strict_prompt = (
+            "Return ONLY a single valid JSON object.\n"
+            "No markdown fences, no commentary, no explanations.\n"
+            "The JSON must be complete with all braces closed.\n\n"
+            "Task: " + task.strip()
+        )
+        resp2 = brain.ask(
+            prompt=strict_prompt,
+            content_class="standard",
+            system=PLANNER_SYSTEM,
+            temperature=0.1,
+        )
+        if resp2.success:
+            parsed = _extract_json(resp2.text or "")
+            if not parsed:
+                _save_failure("retry_attempt", task, resp2.text or "")
+            else:
+                resp = resp2  # use the successful retry
+        else:
+            _save_failure("retry_failed", task, str(resp2.error))
+
     if not parsed:
         return {
             "success": False,
-            "error": "could not parse JSON from LLM output",
+            "error": "could not parse JSON from LLM output (after retry)",
             "raw": raw[:800],
         }
 
