@@ -151,6 +151,15 @@ def handle(brain, message: str,
             "check": check,
         }
 
+    # ── Skill Registry (auto-learn) ──
+    skills_touched = []
+    try:
+        from memory.skills import SkillRegistry
+        sr = SkillRegistry()
+        skills_touched = sr.learn_from_execution(p, report, source="tri-brain")
+    except Exception:
+        pass
+
     # ── Arabic Layer ──
     try:
         from brain.arabic_layer import render
@@ -158,6 +167,12 @@ def handle(brain, message: str,
     except Exception:
         # Fallback: minimal English
         text = f"Done: {report.get('steps_ok')}/{report.get('steps_total')}"
+
+    # Append skills learned (if any)
+    if skills_touched:
+        text += "\n\n🎓 مهارات تحدّثت:"
+        for sk in set(skills_touched):
+            text += f"\n   • {sk}"
 
     # Add check summary if refined
     if check and check.get("verdict") == "refine" and check.get("concerns"):
@@ -172,6 +187,7 @@ def handle(brain, message: str,
         "raw": report,
         "plan": p,
         "check": check,
+        "skills_touched": skills_touched,
     }
 
 

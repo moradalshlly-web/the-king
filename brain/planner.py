@@ -237,6 +237,15 @@ def plan(brain, task: str, context: str = "",
     except Exception:
         top_folders = "brain, tools, providers, memory, web_new, config"
 
+    # Relevant skills (from Skill Registry)
+    skills_block = ""
+    try:
+        from memory.skills import SkillRegistry
+        sr = SkillRegistry()
+        skills_block = sr.relevant_for(task, limit=5)
+    except Exception:
+        pass
+
     user_prompt = f"""TASK (from owner, could be Arabic or English):
 {task.strip()}
 
@@ -251,8 +260,13 @@ IMPORTANT RULES:
 - New tools under "tools/".
 - New brain modules under "brain/".
 - Reuse existing folders; do not invent new top-level ones.
+- PRESERVE the original language of user-provided strings.
+  If the user writes an Arabic string to be printed/saved,
+  keep it in Arabic exactly as given. Do NOT translate to English.
 
 {vision_short}
+
+{skills_block}
 
 {context}
 
