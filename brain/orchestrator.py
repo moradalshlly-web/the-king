@@ -151,8 +151,9 @@ def handle(brain, message: str,
             "check": check,
         }
 
-    # ── Visual Critic (for HTML outputs) ──
+    # ── Visual Critic + Refiner (for HTML outputs) ──
     critique = None
+    refinement = None
     try:
         # هل أنشأنا أي .html؟
         html_files = [
@@ -161,11 +162,22 @@ def handle(brain, message: str,
             and r.get("success")
         ]
         if html_files:
-            from brain.visual_critic import critique as run_critique
-            # نُقيّم الملف الأول (عادة index.html)
-            critique = run_critique(brain, html_files[0], use_llm=True)
-    except Exception:
-        pass
+            target_path = html_files[0]
+            # Refiner: يحسّن الملف حتى الهدف (افتراضي 8/10)
+            from brain.refiner import refine_until
+            if verbose:
+                print()
+                print("   ✨ التحسين الذاتي (حتى 8/10)...")
+            refinement = refine_until(
+                brain, target_path,
+                target=8.0,
+                max_iterations=4,
+                verbose=verbose,
+            )
+            critique = refinement.get("final_critique") if refinement else None
+    except Exception as e:
+        if verbose:
+            print(f"   ⚠️ Refiner: {e}")
 
     # ── Skill Registry (auto-learn) ──
     skills_touched = []
@@ -192,6 +204,17 @@ def handle(brain, message: str,
         except Exception:
             text += f"\n\n🎨 الناقد البصري: {critique.get('overall', '?')}/10"
 
+    # Append refinement report (if any)
+    if refinement and refinement.get("iterations", 0) > 0:
+        try:
+            from brain.refiner import render_arabic as render_refine
+            text += "\n\n" + render_refine(refinement)
+        except Exception:
+            text += (
+                f"\n\n🔧 التحسين: {refinement.get('initial_score','?')}"
+                f" → {refinement.get('final_score','?')}"
+            )
+
     # Append skills learned (if any)
     if skills_touched:
         text += "\n\n🎓 مهارات تحدّثت:"
@@ -213,6 +236,7 @@ def handle(brain, message: str,
         "check": check,
         "skills_touched": skills_touched,
         "visual_critique": critique,
+        "refinement": refinement,
     }
 
 
