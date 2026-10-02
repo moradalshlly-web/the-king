@@ -33,6 +33,8 @@ from brain.evolve import EvolveEngine
 from brain.vision import vision_summary
 from brain import search_history
 from brain import history_updater
+from brain.task_classifier import classify as classify_task
+from brain.orchestrator import handle as orchestrate
 
 # Enhanced CLI input (prompt_toolkit with fallback)
 try:
@@ -333,6 +335,7 @@ def main():
     # State
     content_class = "standard"
     tools_enabled = True
+    current_style = "friendly"   # detailed | brief | friendly
     forced_provider = None
     forced_model = None
     messages_log = []
@@ -595,6 +598,15 @@ def main():
                     print(c(f"Content class: {content_class}", GREEN))
                 else:
                     print(c(f"Choose: {sorted(CONTENT_CLASSES)}", RED))
+
+            # Style (detailed | brief | friendly)
+            elif cmd == "/style":
+                valid_styles = ("detailed", "brief", "friendly")
+                if args in valid_styles:
+                    current_style = args
+                    print(c(f"Style: {current_style}", GREEN))
+                else:
+                    print(c(f"Choose: {valid_styles}", RED))
 
             # Tools on/off
             elif cmd == "/tools":
@@ -903,6 +915,31 @@ def main():
         if forced_model:
             kwargs["model"] = forced_model
 
+        # ═══ Classify intent: chat vs build ═══
+        try:
+            cls = classify_task(brain, raw)
+        except Exception:
+            cls = {"mode": "chat", "confidence": 0.0}
+
+        if cls.get("mode") == "build":
+            # Full Tri-Brain pipeline
+            try:
+                result = orchestrate(brain, raw, style=current_style, verbose=True)
+                print()
+                print(c(result["text"], CYAN))
+                messages_log.append({
+                    "role": "ai",
+                    "text": result["text"],
+                    "provider": "tri-brain",
+                    "model": "orchestrator",
+                    "time": datetime.now().isoformat(),
+                })
+            except Exception as e:
+                print()
+                print(c(f"❌ Tri-Brain error: {e}", RED))
+            continue
+
+        # ═══ Legacy chat path (with streaming) ═══
         # ═══ Streaming setup ═══
         is_streaming = [True]  # mutable flag
         printed_any = [False]
