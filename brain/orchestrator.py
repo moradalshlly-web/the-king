@@ -151,6 +151,22 @@ def handle(brain, message: str,
             "check": check,
         }
 
+    # ── Visual Critic (for HTML outputs) ──
+    critique = None
+    try:
+        # هل أنشأنا أي .html؟
+        html_files = [
+            r["path"] for r in (report.get("results") or [])
+            if isinstance(r, dict) and r.get("path", "").endswith(".html")
+            and r.get("success")
+        ]
+        if html_files:
+            from brain.visual_critic import critique as run_critique
+            # نُقيّم الملف الأول (عادة index.html)
+            critique = run_critique(brain, html_files[0], use_llm=True)
+    except Exception:
+        pass
+
     # ── Skill Registry (auto-learn) ──
     skills_touched = []
     try:
@@ -167,6 +183,14 @@ def handle(brain, message: str,
     except Exception:
         # Fallback: minimal English
         text = f"Done: {report.get('steps_ok')}/{report.get('steps_total')}"
+
+    # Append visual critique (if any)
+    if critique and critique.get("ok"):
+        try:
+            from brain.visual_critic import render_arabic as render_critique
+            text += "\n\n" + render_critique(critique)
+        except Exception:
+            text += f"\n\n🎨 الناقد البصري: {critique.get('overall', '?')}/10"
 
     # Append skills learned (if any)
     if skills_touched:
@@ -188,6 +212,7 @@ def handle(brain, message: str,
         "plan": p,
         "check": check,
         "skills_touched": skills_touched,
+        "visual_critique": critique,
     }
 
 

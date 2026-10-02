@@ -148,7 +148,32 @@ def _run_one_step(brain, builder, step: Dict[str, Any],
     try:
         if verbose:
             print(f"   📝 [{action}] {path}")
-        gen = builder.generate(path, desc)
+
+        # إذا لم يكن هناك وصف، نستخدم وصفاً عاماً
+        effective_desc = desc
+        if not effective_desc or len(effective_desc.strip()) < 10:
+            ext = path.rsplit(".", 1)[-1].lower()
+            effective_desc = {
+                "html": "Create a complete HTML page using the design system.",
+                "css": "Create a CSS file that extends the design system.",
+                "js": "Create a JavaScript file for basic interactivity.",
+                "py": "Create a small Python utility.",
+            }.get(ext, "Create a complete, working file.")
+
+        gen = builder.generate(path, effective_desc)
+
+        # إعادة المحاولة إذا كانت النتيجة فارغة
+        if not gen.get("success") or not (gen.get("content") or "").strip():
+            if verbose:
+                print(f"      🔄 إعادة محاولة...")
+            stricter = (
+                "Return ONLY the file content, nothing else. "
+                "No markdown fences. No explanation. Start immediately with the first character "
+                "of the file (e.g. '<' for HTML, '#!' or 'import' for Python). "
+                "The file must be complete and valid. Target: " + path + ". Purpose: " + effective_desc
+            )
+            gen = builder.generate(path, stricter)
+
         if not gen.get("success"):
             result["error"] = gen.get("error", "generate failed")
             result["stage"] = "generate"
