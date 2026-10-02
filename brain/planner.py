@@ -196,11 +196,30 @@ def plan(brain, task: str, context: str = "",
     except Exception:
         pass
 
+    # Top-level folders (grounding for file paths)
+    top_folders = ""
+    try:
+        from brain.project_scanner import scan_project
+        m2 = scan_project()
+        dirs = sorted(m2.get("directories", {}).keys())
+        top_folders = ", ".join(dirs)
+    except Exception:
+        top_folders = "brain, tools, providers, memory, web_new, config"
+
     user_prompt = f"""TASK (from owner, could be Arabic or English):
 {task.strip()}
 
 CURRENT PROJECT:
 {manifest_summary}
+
+TOP-LEVEL FOLDERS (use these as the base for new paths):
+{top_folders}
+
+IMPORTANT RULES:
+- New website files should go under "web_new/" (not "web/").
+- New tools under "tools/".
+- New brain modules under "brain/".
+- Reuse existing folders; do not invent new top-level ones.
 
 {vision_short}
 
