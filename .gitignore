@@ -41,3 +41,4 @@ diagnose_offline.py
 memory/cloud/test_sync.md
 memory/cloud/_test_*
 memory/cloud/_final_*
+memory/monitor/
