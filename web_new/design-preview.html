@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOROAI Design System — Preview</title>
+    <link rel="stylesheet" href="design.css">
+    <style>
+        /* Preview-specific: theme switcher */
+        .switcher {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--border-bright);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            display: flex;
+            gap: 6px;
+            box-shadow: var(--shadow-lg);
+        }
+        .switcher button {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .switcher button:hover { transform: scale(1.1); }
+        .switcher button.active { border-color: white; }
+        .sw-purple  { background: #7c3aed; }
+        .sw-gold    { background: #d97706; }
+        .sw-emerald { background: #059669; }
+        .sw-ruby    { background: #e11d48; }
+    </style>
+</head>
+<body>
+
+<!-- Theme Switcher -->
+<div class="switcher">
+    <button class="sw-purple active" onclick="setTheme('purple', this)"></button>
+    <button class="sw-gold"           onclick="setTheme('gold', this)"></button>
+    <button class="sw-emerald"        onclick="setTheme('emerald', this)"></button>
+    <button class="sw-ruby"           onclick="setTheme('ruby', this)"></button>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container-sm">
+        <div class="badge badge-accent mb-4">🎨 Design System v1.0</div>
+        <h1 class="hero-title">MOROAI Design System</h1>
+        <p class="hero-subtitle">
+            نظام تصميم عربي موحّد يستخدمه MOROAI في كل موقع يبنيه.
+            ألوان فخمة، مكونات جاهزة، وأداء عالٍ.
+        </p>
+        <div class="row row-center">
+            <button class="btn btn-primary">ابدأ الآن</button>
+            <button class="btn btn-secondary">التفاصيل</button>
+        </div>
+    </div>
+</section>
+
+<!-- Section: Buttons -->
+<section class="container mt-8 mb-8">
+    <h2 class="mb-4">الأزرار (Buttons)</h2>
+    <div class="card">
+        <div class="row row-wrap">
+            <button class="btn btn-primary">زر رئيسي</button>
+            <button class="btn btn-secondary">زر ثانوي</button>
+            <button class="btn btn-ghost">زر شبح</button>
+            <button class="btn btn-primary" disabled style="opacity:0.5;cursor:not-allowed;">معطّل</button>
+        </div>
+    </div>
+</section>
+
+<!-- Section: Badges -->
+<section class="container mt-8 mb-8">
+    <h2 class="mb-4">الشارات (Badges)</h2>
+    <div class="card">
+        <div class="row row-wrap">
+            <span class="badge">افتراضي</span>
+            <span class="badge badge-accent">مميز</span>
+            <span class="badge badge-success">✓ نجح</span>
+            <span class="badge badge-warning">⚠ تنبيه</span>
+            <span class="badge badge-danger">✕ فشل</span>
+        </div>
+    </div>
+</section>
+
+<!-- Section: Cards Grid -->
+<section class="container mt-8 mb-8">
+    <h2 class="mb-4">البطاقات (Cards)</h2>
+    <div class="grid grid-3">
+        <div class="card">
+            <h4 class="mb-4">🎯 التخطيط</h4>
+            <p class="text-muted">
+                MOROAI يُحلّل الطلب ويقسّمه إلى خطوات واضحة قبل التنفيذ.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">🔍 التدقيق</h4>
+            <p class="text-muted">
+                مدقق مستقل يراجع كل خطة ويُعطيها درجة قبل البناء.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">⚙️ التنفيذ</h4>
+            <p class="text-muted">
+                يبني الملفات فعلياً مع فحص تلقائي وإصلاح ذاتي.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">📊 المراقبة</h4>
+            <p class="text-muted">
+                مراقب يراقب كل ملف ويكتب تقريراً بأي ملاحظة.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">🎓 التعلّم</h4>
+            <p class="text-muted">
+                يُسجّل المهارات ويكتسب خبرة من كل تجربة.
+            </p>
+        </div>
+        <div class="card">
+            <h4 class="mb-4">🗣️ الشرح</h4>
+            <p class="text-muted">
+                يشرح ما فعل بالعربية — 3 أنماط حسب المستخدم.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Section: Input & Form -->
+<section class="container mt-8 mb-8">
+    <h2 class="mb-4">النماذج (Forms)</h2>
+    <div class="card container-sm">
+        <div class="stack">
+            <div>
+                <label class="badge mb-4">الاسم</label>
+                <input type="text" class="input" placeholder="اكتب اسمك..." />
+            </div>
+            <div>
+                <label class="badge mb-4">الرسالة</label>
+                <input type="text" class="input" placeholder="اكتب رسالتك..." />
+            </div>
+            <div class="row row-between">
+                <button class="btn btn-secondary">إلغاء</button>
+                <button class="btn btn-primary">إرسال</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section: Glass Card -->
+<section class="container mt-8 mb-8">
+    <h2 class="mb-4">البطاقة الزجاجية (Glass Card)</h2>
+    <div class="card-glass">
+        <h4 class="mb-4">✨ تأثير Glassmorphism</h4>
+        <p class="text-muted">
+            يستخدم backdrop-filter لإنشاء تأثير ضبابي راقٍ.
+            مثالي للواجهات الحديثة.
+        </p>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer mt-8">
+    <div class="container">
+        <p>MOROAI Design System v1.0 · مبني للعربية أولاً</p>
+        <p class="text-muted mt-4">صُنع بـ ❤ في ليبيا</p>
+    </div>
+</footer>
+
+<script>
+    function setTheme(name, btn) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
