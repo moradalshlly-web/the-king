@@ -25,9 +25,12 @@ TPL_DIR = os.path.join(PROJECT_ROOT, "web_new", "templates")
 
 # What each template is for (used to help the LLM pick)
 TEMPLATE_HINTS = {
-    "landing":   "صفحة هبوط (Hero + Features + Pricing + CTA)",
-    "dashboard": "لوحة تحكم (Sidebar + Stats + Activity)",
-    "login":     "صفحة دخول (نموذج تسجيل)",
+    "landing":   "صفحة هبوط تسويقية (Hero + Features + Pricing + CTA) — للشركات والمنتجات",
+    "dashboard": "لوحة تحكم إدارية (Sidebar + Stats + Activity) — للتطبيقات والأنظمة",
+    "login":     "صفحة تسجيل دخول (نموذج مصادقة) — للبوابات المحمية",
+    "portfolio": "معرض أعمال شخصي (Hero + مشاريع + عني + تواصل) — للمستقلين والمصممين",
+    "blog":      "مدونة/مجلة (قائمة مقالات + تاريخ) — للمحتوى والكتابة",
+    "docs":      "صفحة توثيق تقنية (Sidebar + Markdown style) — للمشاريع البرمجية",
 }
 
 

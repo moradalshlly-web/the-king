@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}} — معرض الأعمال</title>
+    <link rel="stylesheet" href="../design.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container row row-between">
+        <span class="navbar-brand">{{NAME}}</span>
+        <div class="row">
+            <a href="#work" class="btn btn-ghost">أعمالي</a>
+            <a href="#about" class="btn btn-ghost">عني</a>
+            <a href="#contact" class="btn btn-primary">تواصل</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container-sm">
+        <div class="badge badge-accent mb-4">{{BADGE}}</div>
+        <h1 class="hero-title">{{NAME}}</h1>
+        <p class="hero-subtitle">{{TAGLINE}}</p>
+        <div class="row row-center mt-8">
+            <a href="#work" class="btn btn-primary">شاهد أعمالي</a>
+            <a href="#contact" class="btn btn-secondary">تواصل معي</a>
+        </div>
+    </div>
+</section>
+
+<section id="work" class="container mt-8 mb-8">
+    <h2 class="text-center mb-8">أعمالي</h2>
+    <div class="grid grid-3">
+        <div class="card">
+            <div class="badge badge-accent mb-4">مشروع 1</div>
+            <h4 class="mb-4">{{PROJECT_1_NAME}}</h4>
+            <p class="text-muted">{{PROJECT_1_DESC}}</p>
+        </div>
+        <div class="card">
+            <div class="badge badge-accent mb-4">مشروع 2</div>
+            <h4 class="mb-4">{{PROJECT_2_NAME}}</h4>
+            <p class="text-muted">{{PROJECT_2_DESC}}</p>
+        </div>
+        <div class="card">
+            <div class="badge badge-accent mb-4">مشروع 3</div>
+            <h4 class="mb-4">{{PROJECT_3_NAME}}</h4>
+            <p class="text-muted">{{PROJECT_3_DESC}}</p>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="container mt-8 mb-8">
+    <div class="card-glass">
+        <h2 class="mb-4">عني</h2>
+        <p class="text-muted">{{ABOUT}}</p>
+    </div>
+</section>
+
+<section id="contact" class="container mt-8 mb-8">
+    <div class="card text-center" style="padding: var(--space-12);">
+        <h2 class="mb-4">تواصل معي</h2>
+        <p class="text-muted mb-8">{{CONTACT_TEXT}}</p>
+        <div class="row row-center">
+            <a href="mailto:{{EMAIL}}" class="btn btn-primary">البريد الإلكتروني</a>
+            <a href="{{LINKEDIN}}" class="btn btn-secondary">LinkedIn</a>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <p>© 2026 {{NAME}} · جميع الحقوق محفوظة</p>
+    </div>
+</footer>
+
+</body>
+</html>

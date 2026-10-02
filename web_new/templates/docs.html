@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="purple">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{TITLE}} — التوثيق</title>
+    <link rel="stylesheet" href="../design.css">
+    <style>
+        .docs-layout { display: grid; grid-template-columns: 260px 1fr; gap: var(--space-6); padding: var(--space-6); max-width: 1200px; margin: 0 auto; }
+        .docs-nav { position: sticky; top: 80px; align-self: start; }
+        .docs-nav a { display: block; padding: var(--space-2) var(--space-3); color: var(--text-secondary); border-radius: var(--radius-md); margin-bottom: var(--space-1); font-size: var(--fs-sm); }
+        .docs-nav a:hover, .docs-nav a.active { background: var(--color-accent-deep); color: var(--text-primary); }
+        .docs-content h2 { margin-top: var(--space-8); margin-bottom: var(--space-4); }
+        .docs-content h3 { margin-top: var(--space-6); margin-bottom: var(--space-3); }
+        .docs-content p { margin-bottom: var(--space-4); line-height: var(--lh-loose); color: var(--text-secondary); }
+        .docs-content pre { background: var(--color-bg-deep); border: 1px solid var(--border-subtle); padding: var(--space-4); border-radius: var(--radius-md); overflow-x: auto; margin: var(--space-4) 0; }
+        .docs-content code { background: var(--color-bg-elevated); padding: 2px 6px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.9em; }
+        @media (max-width: 768px) { .docs-layout { grid-template-columns: 1fr; } .docs-nav { display: none; } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container row row-between">
+        <span class="navbar-brand">{{PROJECT_NAME}}</span>
+        <div class="row">
+            <a href="#" class="btn btn-ghost">الرئيسية</a>
+            <a href="#" class="btn btn-ghost">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<div class="docs-layout">
+    <aside class="docs-nav">
+        <div class="badge badge-accent mb-4">التوثيق</div>
+        <a href="#intro" class="active">المقدمة</a>
+        <a href="#install">التثبيت</a>
+        <a href="#usage">الاستخدام</a>
+        <a href="#api">الـ API</a>
+        <a href="#examples">أمثلة</a>
+    </aside>
+    <main class="docs-content">
+        <h1>{{PROJECT_NAME}}</h1>
+        <p class="text-muted">{{TAGLINE}}</p>
+
+        <h2 id="intro">المقدمة</h2>
+        <p>{{INTRO}}</p>
+
+        <h2 id="install">التثبيت</h2>
+        <pre><code>npm install {{PACKAGE_NAME}}</code></pre>
+
+        <h2 id="usage">الاستخدام</h2>
+        <p>مثال بسيط للبدء:</p>
+        <pre><code>{{USAGE_CODE}}</code></pre>
+
+        <h2 id="api">الـ API</h2>
+        <p>{{API_DESCRIPTION}}</p>
+
+        <h2 id="examples">أمثلة</h2>
+        <p>{{EXAMPLES}}</p>
+    </main>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <p>© 2026 {{PROJECT_NAME}}</p>
+    </div>
+</footer>
+
+</body>
+</html>
